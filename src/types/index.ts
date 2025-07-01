@@ -3,7 +3,15 @@ export interface Environment {
   name: string;
   baseUrl: string;
   color: string;
+  projectId: string; // New field to associate with a project
   isActive?: boolean;
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  color?: string;
 }
 
 export interface LanguageOption {
@@ -14,6 +22,7 @@ export interface LanguageOption {
 
 export interface ExtensionConfig {
   environments: Environment[];
+  projects: Project[]; // New field for projects
   currentEnvironment?: string;
   autoDetectLanguages: boolean;
 }

@@ -214,6 +214,7 @@ function App() {
       <div className="switchers">
         <EnvironmentSwitcher
           environments={config.environments}
+          projects={config.projects}
           currentEnvironment={currentTab?.currentEnvironment}
           onSwitch={handleEnvironmentSwitch}
         />

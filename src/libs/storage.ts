@@ -1,5 +1,5 @@
 import browser from 'webextension-polyfill';
-import type {ExtensionConfig} from '../types';
+import type { ExtensionConfig } from '../types';
 
 export class ExtensionStorage {
   private static isValidConfig(config: any): config is ExtensionConfig {
@@ -7,6 +7,7 @@ export class ExtensionStorage {
       config &&
       typeof config === 'object' &&
       Array.isArray(config.environments) &&
+      Array.isArray(config.projects) &&
       typeof config.autoDetectLanguages === 'boolean'
     );
   }
@@ -14,24 +15,26 @@ export class ExtensionStorage {
   private static getDefaultConfig(): ExtensionConfig {
     return {
       environments: [],
+      projects: [],
       autoDetectLanguages: true
     };
   }
 
-  private static async getStorage(): Promise<browser.Storage.StorageArea> {
+  // Choose between sync and local storage
+  private static async getStorage(sync = true): Promise<browser.Storage.StorageArea> {
+    if (sync && browser.storage.sync) {
+      return browser.storage.sync;
+    }
     return browser.storage.local;
   }
 
-  static async getConfig(): Promise<ExtensionConfig> {
+  static async getConfig(sync = true): Promise<ExtensionConfig> {
     try {
-      const storage = await this.getStorage();
+      const storage = await this.getStorage(sync);
       const result = await storage.get('extensionConfig');
-
       if (this.isValidConfig(result.extensionConfig)) {
         return result.extensionConfig;
       }
-
-      // Return default configuration
       return this.getDefaultConfig();
     } catch (error) {
       console.error('Error getting config:', error);
@@ -39,28 +42,28 @@ export class ExtensionStorage {
     }
   }
 
-  static async saveConfig(config: ExtensionConfig): Promise<void> {
+  static async saveConfig(config: ExtensionConfig, sync = true): Promise<void> {
     try {
-      const storage = await this.getStorage();
+      const storage = await this.getStorage(sync);
       await storage.set({ extensionConfig: config });
     } catch (error) {
       console.error('Error saving config:', error);
     }
   }
 
-  static async getCurrentEnvironment(): Promise<string | undefined> {
-    const config = await this.getConfig();
+  static async getCurrentEnvironment(sync = true): Promise<string | undefined> {
+    const config = await this.getConfig(sync);
     return config.currentEnvironment;
   }
 
-  static async setCurrentEnvironment(envId: string): Promise<void> {
-    const config = await this.getConfig();
+  static async setCurrentEnvironment(envId: string, sync = true): Promise<void> {
+    const config = await this.getConfig(sync);
     config.currentEnvironment = envId;
-    await this.saveConfig(config);
+    await this.saveConfig(config, sync);
   }
 
-  static async isConfigured(): Promise<boolean> {
-    const config = await this.getConfig();
+  static async isConfigured(sync = true): Promise<boolean> {
+    const config = await this.getConfig(sync);
     return config.environments.length > 0;
   }
 }
