@@ -1,69 +1,47 @@
-# React + TypeScript + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# Environment Switcher Browser Extension
 
-Currently, two official plugins are available:
+A React-based browser extension built with TypeScript and Vite that allows users to switch between different environments.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## System Requirements
 
-## Expanding the ESLint configuration
+- **Operating System**: Windows, macOS, or Linux
+- **Node.js**: Version 18.0.0 or higher
+- **npm**: Version 8.0.0 or higher (comes with Node.js)
+- **Build Tools**: No additional build tools required (all handled by npm scripts)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Installation Requirements
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Node.js and npm
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+1. **Download and Install Node.js**:
+    - Visit [https://nodejs.org/](https://nodejs.org/)
+    - Download the LTS version (recommended)
+    - Install following the platform-specific instructions
+    - This will automatically install npm as well
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+2. **Verify Installation**:
+   ```bash
+   node --version
+   npm --version
+   ```
+    - Node.js should be v18.0.0 or higher
+    - npm should be v8.0.0 or higher
+
+## Build Instructions
+
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+#### For Firefox:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+ npm run build:firefox
+```
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Step 4: Package Extension (Optional)
+
+```bash
+npm run package:firefox
 ```
