@@ -78,29 +78,31 @@ export const loadConfig = async (): Promise<StoredConfig> => {
   try {
     const storage = await browser.storage.sync || browser.storage.local;
     const result = await storage.get('extensionConfig');
-    const config = result.extensionConfig;
+    const config = result.extensionConfig as any;
 
-    if (!config) {
-      return {
-        projects: [],
-        environments: [],
-        autoDetectLanguages: true,
-        aiConfig: {
-          enabled: false,
-          url: 'http://localhost:1234',
-          model: ''
-        }
-      };
-    }
-
-    // Return the config with AI config added if it doesn't exist
-    return {
-      ...config,
-      aiConfig: config.aiConfig || {
+    // Default config structure
+    const defaultStoredConfig: StoredConfig = {
+      projects: [],
+      environments: [],
+      autoDetectLanguages: true,
+      aiConfig: {
         enabled: false,
         url: 'http://localhost:1234',
         model: ''
       }
+    };
+
+    if (!config || typeof config !== 'object') {
+      return defaultStoredConfig;
+    }
+
+    // Safely construct the config with fallbacks
+    return {
+      projects: Array.isArray(config.projects) ? config.projects : [],
+      environments: Array.isArray(config.environments) ? config.environments : [],
+      autoDetectLanguages: typeof config.autoDetectLanguages === 'boolean' ? config.autoDetectLanguages : true,
+      currentEnvironment: config.currentEnvironment,
+      aiConfig: config.aiConfig || defaultStoredConfig.aiConfig
     };
   } catch (error) {
     console.error('Failed to load config:', error);
