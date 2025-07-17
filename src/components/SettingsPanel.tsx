@@ -81,7 +81,6 @@ const SettingsPanel: React.FC<Props> = ({ onSettingsChange }) => {
   return (
     <div className="settings-panel">
       <div className="settings-header">
-        <h2>Settings</h2>
         <div className="settings-tabs">
           <button
             className={`tab-btn ${activeTab === 'projects' ? 'active' : ''}`}

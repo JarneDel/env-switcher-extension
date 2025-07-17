@@ -48,7 +48,6 @@ html {
   padding: 1rem 1.25rem;
   background: #f8fafc;
   border-bottom: 1px solid #e2e8f0;
-  margin-bottom: 1rem;
 }
 
 .app-header h1 {
@@ -70,6 +69,36 @@ html {
 
 .config-btn:hover, .back-btn:hover {
   background: #e2e8f0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-save-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.header-save-btn:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.header-save-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
 }
 
 /* Setup Welcome Styles */
@@ -170,42 +199,47 @@ html {
 }
 
 .settings-header {
-  padding: 0 1.25rem 1rem 1.25rem;
+  padding: 0 1.25rem 0rem 1.25rem;
   border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .settings-header h2 {
-  margin: 0 0 1rem 0;
+  margin: 0;
   font-size: 1.125rem;
   color: #1e293b;
 }
 
-.settings-tabs {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.tab-btn {
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
+.header-save-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
   border-radius: 6px;
   padding: 0.5rem 0.75rem;
   cursor: pointer;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #64748b;
-  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s;
 }
 
-.tab-btn:hover {
-  background: #e2e8f0;
-  border-color: #cbd5e1;
+.header-save-btn:hover:not(:disabled) {
+  background: #2563eb;
 }
 
-.tab-btn.active {
-  background: #3b82f6;
-  border-color: #3b82f6;
-  color: white;
+.header-save-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
 }
 
 .settings-section {
@@ -955,6 +989,160 @@ html {
   }
 }
 
+
+
+/* Accordion Animation Styles */
+.project-content,
+.environments-content,
+.env-content {
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.project-content.expanded,
+.environments-content.expanded,
+.env-content.expanded {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.project-content.collapsed,
+.environments-content.collapsed,
+.env-content.collapsed {
+  opacity: 0;
+  transform: translateY(-10px);
+  max-height: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.project-content-inner,
+.environments-content-inner,
+.env-content-inner {
+  padding-top: 0.75rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.project-content.collapsed .project-content-inner,
+.environments-content.collapsed .environments-content-inner,
+.env-content.collapsed .env-content-inner {
+  padding-top: 0;
+  transform: translateY(-10px);
+}
+
+/* Enhanced collapse button styles */
+.collapse-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0.25rem;
+  margin-right: 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  transform-origin: center;
+}
+
+.collapse-btn.small {
+  width: 18px;
+  height: 18px;
+  font-size: 0.7rem;
+  margin-right: 0.375rem;
+}
+
+.collapse-btn:hover {
+  background: #e5e7eb;
+  transform: scale(1.1);
+}
+
+.collapse-btn:active {
+  transform: scale(0.95);
+}
+
+/* Smooth icon rotation */
+.collapse-btn svg {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Updated project info layout */
+.project-info {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Environment header layout */
+.env-header-left {
+  display: flex;
+  align-items: center;
+}
+
+.env-config-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0;
+}
+
+/* Settings Tabs Styles */
+.settings-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 8px;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+  white-space: nowrap;
+  min-height: 40px;
+}
+
+.tab-btn:hover {
+  background: #e2e8f0;
+  color: #475569;
+  transform: translateY(-1px);
+}
+
+.tab-btn.active {
+  background: #ffffff;
+  color: #1e293b;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.tab-btn.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #3b82f6;
+  border-radius: 2px 2px 0 0;
+}
+
+
+
+
+
 /* === DARK MODE STYLES === */
 @media (prefers-color-scheme: dark) {
   .app {
@@ -1251,109 +1439,37 @@ html {
     border-color: #b94a4a;
     color: #f87171;
   }
-}
 
-/* Accordion Animation Styles */
-.project-content,
-.environments-content,
-.env-content {
-  overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+  /* Settings Panel Dark Mode */
+  .settings-header {
+    border-bottom-color: #374151;
+  }
 
-.project-content.expanded,
-.environments-content.expanded,
-.env-content.expanded {
-  opacity: 1;
-  transform: translateY(0);
-}
+  .header-save-btn {
+    background: #3b82f6;
+  }
 
-.project-content.collapsed,
-.environments-content.collapsed,
-.env-content.collapsed {
-  opacity: 0;
-  transform: translateY(-10px);
-  max-height: 0;
-  margin: 0;
-  padding: 0;
-}
+  .header-save-btn:hover:not(:disabled) {
+    background: #2563eb;
+  }
 
-.project-content-inner,
-.environments-content-inner,
-.env-content-inner {
-  padding-top: 0.75rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+  .header-save-btn:disabled {
+    background: #6b7280;
+  }
 
-.project-content.collapsed .project-content-inner,
-.environments-content.collapsed .environments-content-inner,
-.env-content.collapsed .env-content-inner {
-  padding-top: 0;
-  transform: translateY(-10px);
-}
 
-/* Enhanced collapse button styles */
-.collapse-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 0.75rem;
-  padding: 0.25rem;
-  margin-right: 0.5rem;
-  border-radius: 4px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  transform-origin: center;
-}
+  .tab-btn {
+    color: #9ca3af;
+  }
 
-.collapse-btn.small {
-  width: 18px;
-  height: 18px;
-  font-size: 0.7rem;
-  margin-right: 0.375rem;
-}
+  .tab-btn:hover {
+    background: #4b5563;
+    color: #d1d5db;
+  }
 
-.collapse-btn:hover {
-  background: #e5e7eb;
-  transform: scale(1.1);
-}
-
-.collapse-btn:active {
-  transform: scale(0.95);
-}
-
-/* Smooth icon rotation */
-.collapse-btn svg {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Updated project info layout */
-.project-info {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-/* Environment header layout */
-.env-header-left {
-  display: flex;
-  align-items: center;
-}
-
-.env-config-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0;
-}
-
-/* Dark mode accordion styles */
-@media (prefers-color-scheme: dark) {
-  .collapse-btn:hover {
-    background: #374151;
+  .tab-btn.active {
+    background: #1f2937;
+    color: #f9fafb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
   }
 }
