@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Bot } from 'lucide-react';
 import type { ExtensionConfig } from '../types';
 import { loadConfig, saveConfig, type StoredConfig } from '../libs/storage';
 import type {LMStudioConfig} from '../libs/aiUtils';
@@ -92,7 +93,8 @@ const SettingsPanel: React.FC<Props> = ({ onSettingsChange }) => {
             className={`tab-btn ${activeTab === 'ai' ? 'active' : ''}`}
             onClick={() => setActiveTab('ai')}
           >
-            🤖 AI Settings
+            <Bot size={16} style={{ marginRight: '0.5rem' }} />
+            AI Settings
           </button>
         </div>
       </div>

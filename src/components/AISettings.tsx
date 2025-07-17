@@ -1,4 +1,5 @@
 import React, {useState} from 'react';
+import { Loader2, CheckCircle, XCircle, Plug, AlertTriangle } from 'lucide-react';
 import {getAvailableModels, type LMStudioConfig, type LMStudioModel, testLMStudioConnection} from '../libs/aiUtils';
 
 interface Props {
@@ -100,7 +101,9 @@ const AISettings: React.FC<Props> = ({ config, onConfigChange }) => {
                 disabled={testingConnection || !config.url.trim()}
                 className={`test-connection-btn ${connectionStatus}`}
               >
-                {testingConnection ? '⏳' : connectionStatus === 'success' ? '✅' : connectionStatus === 'error' ? '❌' : '🔌'}
+                {testingConnection ? <Loader2 size={16} className="animate-spin" /> :
+                 connectionStatus === 'success' ? <CheckCircle size={16} /> :
+                 connectionStatus === 'error' ? <XCircle size={16} /> : <Plug size={16} />}
                 {testingConnection ? 'Testing...' : 'Test'}
               </button>
             </div>
@@ -138,7 +141,8 @@ const AISettings: React.FC<Props> = ({ config, onConfigChange }) => {
 
           {error && (
             <div className="ai-error">
-              ⚠️ {error}
+              <AlertTriangle size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
+              {error}
             </div>
           )}
         </>

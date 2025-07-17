@@ -1,4 +1,5 @@
 import React from 'react';
+import { AlertTriangle } from 'lucide-react';
 
 interface Props {
   errors: string[];
@@ -10,7 +11,10 @@ const ValidationErrors: React.FC<Props> = ({ errors }) => {
   return (
     <div className="validation-errors">
       {errors.map((error, i) => (
-        <div key={i} className="error-message">⚠️ {error}</div>
+        <div key={i} className="error-message">
+          <AlertTriangle size={12} style={{ display: 'inline', marginRight: '0.5rem' }} />
+          {error}
+        </div>
       ))}
     </div>
   );

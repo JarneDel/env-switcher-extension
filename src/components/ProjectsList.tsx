@@ -1,4 +1,5 @@
 import React from 'react';
+import { Folder } from 'lucide-react';
 import ProjectConfig from './ProjectConfig';
 import EmptyState from './EmptyState';
 import { useConfiguration } from '../context/ConfigurationContext';
@@ -7,8 +8,6 @@ const ProjectsList: React.FC = () => {
   const {
     editingProjects,
     addProject,
-    handleProjectChange,
-    removeProject,
     validateProject,
     validateEnvironment,
     getEnvironmentsByProject
@@ -27,7 +26,7 @@ const ProjectsList: React.FC = () => {
         <EmptyState
           title="No Projects Configured"
           description="Create projects to organize your environments by context"
-          icon="📁"
+          icon={<Folder size={40} />}
         />
       )}
 

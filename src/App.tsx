@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Settings, AlertTriangle } from 'lucide-react';
 import type {Environment, TabInfo, ExtensionConfig, LanguageOption} from './types';
 import { ExtensionStorage } from './libs/storage';
 import { URLUtils } from './libs/urlUtils';
@@ -170,7 +171,8 @@ function App() {
     );
   }
 
-  if (!config || config.environments.length === 0) {
+  // No environments configured state
+  if (!isConfigured && currentView === 'main') {
     return (
       <div className="app">
         <header className="app-header">
@@ -180,11 +182,11 @@ function App() {
             onClick={() => setCurrentView('settings')}
             title="Configure environments"
           >
-            ⚙️
+            <Settings size={20} />
           </button>
         </header>
         <div className="no-config">
-          <div className="no-config-icon">⚠️</div>
+          <div className="no-config-icon"><AlertTriangle size={40} /></div>
           <h3>No Environments Configured</h3>
           <p>Please configure your environments to start switching.</p>
           <button 
@@ -207,14 +209,14 @@ function App() {
           onClick={() => setCurrentView('settings')}
           title="Configure environments"
         >
-          ⚙️
+          <Settings size={20} />
         </button>
       </header>
 
       <div className="switchers">
         <EnvironmentSwitcher
-          environments={config.environments}
-          projects={config.projects}
+          environments={config?.environments || []}
+          projects={config?.projects || []}
           currentEnvironment={currentTab?.currentEnvironment}
           onSwitch={handleEnvironmentSwitch}
         />

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Globe, Folder, AlertTriangle } from 'lucide-react';
 import type {Environment, Project} from '../types';
 
 interface Props {
@@ -25,7 +26,7 @@ const EnvironmentSwitcher: React.FC<Props> = ({
       <div className="switcher-section">
         <h3>Environments</h3>
         <div className="fallback-message">
-          <div className="fallback-icon">🌍</div>
+          <div className="fallback-icon"><Globe size={32} /></div>
           <h4>Unknown Website</h4>
           <p>This website doesn't match any of your configured environments.</p>
           <p className="fallback-hint">Environment switching is only available on configured websites.</p>
@@ -42,7 +43,7 @@ const EnvironmentSwitcher: React.FC<Props> = ({
       <div className="switcher-section">
         <h3>Environments</h3>
         <div className="fallback-message">
-          <div className="fallback-icon">⚠️</div>
+          <div className="fallback-icon"><AlertTriangle size={32} /></div>
           <h4>Project Not Found</h4>
           <p>The current environment belongs to a project that no longer exists.</p>
           <p className="fallback-hint">Please reconfigure your environments in Settings.</p>
@@ -59,7 +60,7 @@ const EnvironmentSwitcher: React.FC<Props> = ({
       <div className="switcher-section">
         <h3>Environments</h3>
         <div className="fallback-message">
-          <div className="fallback-icon">📂</div>
+          <div className="fallback-icon"><Folder size={32} /></div>
           <h4>No Environments Available</h4>
           <p>No environments are configured for the <strong>{currentProject.name}</strong> project.</p>
           <p className="fallback-hint">Add more environments in Settings to enable switching.</p>

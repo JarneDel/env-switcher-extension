@@ -3,7 +3,7 @@ import React from 'react';
 interface Props {
   title: string;
   description: string;
-  icon: string;
+  icon: React.ReactNode;
 }
 
 const EmptyState: React.FC<Props> = ({ title, description, icon }) => {

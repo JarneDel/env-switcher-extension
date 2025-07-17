@@ -1257,27 +1257,38 @@ html {
 .environments-content,
 .env-content {
   overflow: hidden;
-  transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .project-content.expanded,
 .environments-content.expanded,
 .env-content.expanded {
-  max-height: 1000px;
   opacity: 1;
+  transform: translateY(0);
 }
 
 .project-content.collapsed,
 .environments-content.collapsed,
 .env-content.collapsed {
-  max-height: 0;
   opacity: 0;
+  transform: translateY(-10px);
+  max-height: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .project-content-inner,
 .environments-content-inner,
 .env-content-inner {
   padding-top: 0.75rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.project-content.collapsed .project-content-inner,
+.environments-content.collapsed .environments-content-inner,
+.env-content.collapsed .env-content-inner {
+  padding-top: 0;
+  transform: translateY(-10px);
 }
 
 /* Enhanced collapse button styles */
@@ -1289,12 +1300,13 @@ html {
   padding: 0.25rem;
   margin-right: 0.5rem;
   border-radius: 4px;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
   width: 20px;
   height: 20px;
+  transform-origin: center;
 }
 
 .collapse-btn.small {
@@ -1307,6 +1319,15 @@ html {
 .collapse-btn:hover {
   background: #e5e7eb;
   transform: scale(1.1);
+}
+
+.collapse-btn:active {
+  transform: scale(0.95);
+}
+
+/* Smooth icon rotation */
+.collapse-btn svg {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Updated project info layout */
@@ -1327,22 +1348,6 @@ html {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0;
-}
-
-/* Remove bottom margin when collapsed */
-.project-content.collapsed .project-content-inner,
-.environments-content.collapsed .environments-content-inner,
-.env-content.collapsed .env-content-inner {
-  padding-top: 0;
-}
-
-/* Smooth arrow rotation */
-.collapse-btn {
-  transform-origin: center;
-}
-
-.collapse-btn:active {
-  transform: scale(0.95);
 }
 
 /* Dark mode accordion styles */
