@@ -3,7 +3,7 @@ import type { Environment, ExtensionConfig, Project } from '../types';
 import { getRandomColor } from '../libs/colorUtils';
 import { validateProject, validateEnvironment, hasValidationErrors } from '../libs/validationUtils';
 import { getCurrentTabUrl, extractBaseDomain } from '../libs/urlUtils';
-import { generateEnvironmentName, LMStudioConfig } from '../libs/aiUtils';
+import { generateEnvironmentName } from '../libs/aiUtils';
 import { loadConfig } from '../libs/storage';
 
 export const useConfigurationState = (config: ExtensionConfig) => {

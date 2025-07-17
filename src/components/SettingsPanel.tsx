@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { ExtensionConfig } from '../types';
-import { loadConfig, saveConfig, StoredConfig } from '../libs/storage';
-import { LMStudioConfig } from '../libs/aiUtils';
+import { loadConfig, saveConfig, type StoredConfig } from '../libs/storage';
+import type {LMStudioConfig} from '../libs/aiUtils';
 import ConfigurationPanel from './ConfigurationPanel';
 import AISettings from './AISettings';
 

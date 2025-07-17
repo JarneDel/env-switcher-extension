@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { LMStudioConfig, LMStudioModel, getAvailableModels, testLMStudioConnection } from '../libs/aiUtils';
+import React, {useState} from 'react';
+import {getAvailableModels, type LMStudioConfig, type LMStudioModel, testLMStudioConnection} from '../libs/aiUtils';
 
 interface Props {
   config: LMStudioConfig;
