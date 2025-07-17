@@ -8,12 +8,14 @@ interface Props {
   onSave: (config: ExtensionConfig) => void;
   onCancel?: () => void;
   standalone?: boolean;
+  onSaveReady?: (saveHandler: () => void, hasErrors: () => boolean) => void;
 }
 
 const ConfigurationPanelContent: React.FC<Omit<Props, 'config'>> = ({
   onSave,
   onCancel,
-  standalone = false
+  standalone = false,
+  onSaveReady
 }) => {
   const {
     configurationPanel,
@@ -26,37 +28,23 @@ const ConfigurationPanelContent: React.FC<Omit<Props, 'config'>> = ({
     onSave(updatedConfig);
   };
 
+  // Expose save handler to parent component
+  React.useEffect(() => {
+    if (onSaveReady) {
+      onSaveReady(handleSave, hasValidationErrors);
+    }
+  }, [onSaveReady, hasValidationErrors]);
+
   return (
     <div className={`config-panel ${standalone ? 'standalone' : ''}`} ref={configurationPanel}>
       {!standalone && <h3>Configure Projects & Environments</h3>}
 
       <ProjectsList />
 
-      {!standalone && (
+      {!standalone && onCancel && (
         <div className="config-actions">
-          <button 
-            onClick={handleSave} 
-            className="save-btn"
-            disabled={hasValidationErrors()}
-          >
-            Save Configuration
-          </button>
-          {onCancel && (
-            <button onClick={onCancel} className="cancel-btn">
-              Cancel
-            </button>
-          )}
-        </div>
-      )}
-
-      {standalone && (
-        <div className="config-actions">
-          <button 
-            onClick={handleSave} 
-            className="save-btn"
-            disabled={hasValidationErrors()}
-          >
-            Save Changes
+          <button onClick={onCancel} className="cancel-btn">
+            Cancel
           </button>
         </div>
       )}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings, AlertTriangle } from 'lucide-react';
+import { Settings, AlertTriangle, Save } from 'lucide-react';
 import type {Environment, TabInfo, ExtensionConfig, LanguageOption} from './types';
 import { ExtensionStorage } from './libs/storage';
 import { URLUtils } from './libs/urlUtils';
@@ -15,6 +15,8 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState<'main' | 'settings' | 'setup'>('main');
   const [isConfigured, setIsConfigured] = useState(false);
+  const [saveHandler, setSaveHandler] = useState<(() => void) | null>(null);
+  const [hasErrors, setHasErrors] = useState<(() => boolean) | null>(null);
 
   useEffect(() => {
     loadInitialData();
@@ -136,6 +138,17 @@ function App() {
     setCurrentView('settings');
   };
 
+  const handleSaveReady = (saveHandlerFn: () => void, hasErrorsFn: () => boolean) => {
+    setSaveHandler(() => saveHandlerFn);
+    setHasErrors(() => hasErrorsFn);
+  };
+
+  const handleSaveClick = () => {
+    if (saveHandler) {
+      saveHandler();
+    }
+  };
+
   if (loading) {
     return (
       <div className="app loading">
@@ -158,15 +171,27 @@ function App() {
       <div className="app">
         <header className="app-header">
           <h1>Settings</h1>
-          <button 
-            className="back-btn"
-            onClick={() => setCurrentView(isConfigured ? 'main' : 'setup')}
-            title="Go back"
-          >
-            ←
-          </button>
+          <div className="header-actions">
+            {saveHandler && (
+              <button
+                className="save-btn"
+                onClick={handleSaveClick}
+                disabled={hasErrors ? hasErrors() : false}
+                title="Save changes"
+              >
+                <Save size={16} />
+              </button>
+            )}
+            <button
+              className="back-btn"
+              onClick={() => setCurrentView(isConfigured ? 'main' : 'setup')}
+              title="Go back"
+            >
+              ←
+            </button>
+          </div>
         </header>
-        <SettingsPanel onSettingsChange={handleSettingsChange} />
+        <SettingsPanel onSettingsChange={handleSettingsChange} onSaveReady={handleSaveReady} />
       </div>
     );
   }

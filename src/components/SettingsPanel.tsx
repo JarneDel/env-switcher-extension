@@ -8,9 +8,10 @@ import AISettings from './AISettings';
 
 interface Props {
   onSettingsChange: () => void;
+  onSaveReady?: (saveHandler: () => void, hasErrors: () => boolean) => void;
 }
 
-const SettingsPanel: React.FC<Props> = ({ onSettingsChange }) => {
+const SettingsPanel: React.FC<Props> = ({ onSettingsChange, onSaveReady }) => {
   const [config, setConfig] = useState<StoredConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'projects' | 'ai'>('projects');
@@ -61,6 +62,12 @@ const SettingsPanel: React.FC<Props> = ({ onSettingsChange }) => {
     }
   };
 
+  const handleSaveReady = (saveHandlerFn: () => void, hasErrorsFn: () => boolean) => {
+    if (onSaveReady) {
+      onSaveReady(saveHandlerFn, hasErrorsFn);
+    }
+  };
+
   if (loading) {
     return (
       <div className="settings-loading">
@@ -103,6 +110,7 @@ const SettingsPanel: React.FC<Props> = ({ onSettingsChange }) => {
           <ConfigurationPanel
             config={config}
             onSave={handleConfigSave}
+            onSaveReady={handleSaveReady}
             standalone
           />
         </div>
