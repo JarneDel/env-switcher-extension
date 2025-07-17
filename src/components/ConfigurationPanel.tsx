@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useRef, useState} from 'react';
 import type {Environment, ExtensionConfig, Project} from '../types';
 import ColorPicker from './ColorPicker';
 
@@ -21,6 +21,8 @@ const ConfigurationPanel: React.FC<Props> = ({
   const [editingEnvironments, setEditingEnvironments] = useState<Environment[]>(
     config.environments.map(env => ({ ...env }))
   );
+
+  const configurationPanel = useRef<HTMLDivElement>(null);
 
   const handleProjectChange = (index: number, field: keyof Project, value: string) => {
     const updated = [...editingProjects];
@@ -79,6 +81,12 @@ const ConfigurationPanel: React.FC<Props> = ({
       projectId: targetProjectId!
     };
     setEditingEnvironments([...editingEnvironments, newEnv]);
+    // scroll to the bottom to show the new environment
+    setTimeout(() => {
+        if (configurationPanel.current) {
+            configurationPanel.current.scrollTop = configurationPanel.current.scrollHeight;
+        }
+    }, 100);
   };
 
   const removeEnvironment = (index: number) => {
@@ -155,7 +163,7 @@ const ConfigurationPanel: React.FC<Props> = ({
           <div className="empty-state">
             <div className="empty-icon">📁</div>
             <h4>No Projects Configured</h4>
-            <p>Create projects to organize your environments by context (e.g., mil.be, buildwise, sport-vlaanderen).</p>
+            <p>Create projects to organize your environments by context</p>
           </div>
         )}
 
@@ -236,7 +244,7 @@ const ConfigurationPanel: React.FC<Props> = ({
                   const errors = validateEnvironment(env);
 
                   return (
-                    <div key={env.id} className={`env-config nested ${errors.length > 0 ? 'has-errors' : ''}`}>
+                    <div key={env.id} className={`env-config nested ${errors.length > 0 ? 'has-errors' : ''}`} ref={configurationPanel}>
                       <div className="env-config-header">
                         <span className="env-number">{env.name || 'Unnamed'}</span>
                         <button

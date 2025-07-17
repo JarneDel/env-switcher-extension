@@ -38,8 +38,8 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "env-switcher@example.com",
-      "strict_min_version": "109.0"
+      "id": "env-switcher@jarnedel.dev",
+      "strict_min_version": "112.0"
     }
   }
 }

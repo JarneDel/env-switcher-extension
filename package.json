@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "build:chrome": "tsc -b && TARGET_BROWSER=chrome vite build",
     "build:firefox": "tsc -b && TARGET_BROWSER=firefox vite build",
+    "watch:firefox": "TARGET_BROWSER=firefox vite build --watch",
     "package:chrome": "npm run build:chrome && cd dist && zip -r ../env-switcher-chrome.zip .",
     "package:firefox": "npm run build:firefox && cd dist && zip -r ../env-switcher-firefox.zip .",
     "lint": "eslint .",
