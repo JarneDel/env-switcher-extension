@@ -175,9 +175,37 @@ html {
 }
 
 .settings-header h2 {
-  margin: 0;
+  margin: 0 0 1rem 0;
   font-size: 1.125rem;
   color: #1e293b;
+}
+
+.settings-tabs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tab-btn {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+  transition: all 0.2s;
+}
+
+.tab-btn:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+.tab-btn.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
 }
 
 .settings-section {
@@ -293,6 +321,10 @@ html {
   margin-bottom: 0.75rem; /* Added for consistent spacing */
 }
 
+.input-group:not(:first-child){
+  margin-top: .75rem; /* Added for consistent spacing */
+}
+
 .input-group:last-child {
   margin-bottom: 0;
 }
@@ -317,7 +349,7 @@ html {
   margin-bottom: 0;
 }
 
-.env-config-row .input-group.color-group {
+.input-group.color-group {
   flex: 0 0 auto;
 }
 
@@ -732,6 +764,10 @@ html {
   margin-bottom: 0;
 }
 
+.project-config-row .input-group.color-group {
+  flex: 0 0 auto;
+}
+
 .project-environments {
   margin-top: 1rem;
   padding-top: 1rem;
@@ -752,6 +788,12 @@ html {
   color: #6b7280;
 }
 
+.environment-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .add-env-btn-small {
   background: #3b82f6;
   color: white;
@@ -768,50 +810,26 @@ html {
   background: #2563eb;
 }
 
-.env-config.nested {
-  margin-bottom: 0.75rem;
-  padding: 0.75rem;
-  background: white;
-  border: 1px solid #d1d5db;
+.add-current-domain-btn {
+  background: #6b7280;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.375rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  line-height: 1;
 }
 
-.remove-btn.small {
-  width: 24px;
-  height: 24px;
-  font-size: 0.875rem;
+.add-current-domain-btn:hover {
+  background: #4b5563;
 }
 
-.no-environments {
-  text-align: center;
-  padding: 1rem;
-  color: #6b7280;
-  font-size: 0.875rem;
-  font-style: italic;
-}
-
-/* Project Environment Switcher Styles */
-.project-environments-group {
-  margin-bottom: 1.5rem;
-}
-
-.project-environments-group:last-child {
-  margin-bottom: 0;
-}
-
-.project-header-switcher {
-  margin-bottom: 0.75rem;
-}
-
-.project-name {
-  margin: 0 0 0.25rem 0;
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
-
-.project-description {
-  font-size: 0.75rem;
-  color: #6b7280;
-  font-style: italic;
+.icon-btn {
+  flex-shrink: 0;
 }
 
 /* Fallback Message Styles */
@@ -1057,5 +1075,95 @@ html {
 
   .fallback-hint {
     color: #9ca3af !important;
+  }
+
+  /* AI Settings Styles */
+  .ai-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .setting-label-text {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #e5e7eb;
+    margin-bottom: 0.5rem;
+  }
+
+  .url-input-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .setting-input, .setting-select {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f3f4f6;
+  }
+
+  .setting-input:focus, .setting-select:focus {
+    background-color: #1f2937;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+  }
+
+  .test-connection-btn {
+    background: #6b7280;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    white-space: nowrap;
+  }
+
+  .test-connection-btn:hover:not(:disabled) {
+    background: #4b5563;
+  }
+
+  .test-connection-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+  }
+
+  .test-connection-btn.success {
+    background: #10b981;
+  }
+
+  .test-connection-btn.success:hover {
+    background: #059669;
+  }
+
+  .test-connection-btn.error {
+    background: #ef4444;
+  }
+
+  .test-connection-btn.error:hover {
+    background: #dc2626;
+  }
+
+  .model-loading {
+    color: #9ca3af;
+  }
+
+  .no-models {
+    background: #452a2a;
+    border-color: #b94a4a;
+    color: #f87171;
+  }
+
+  .ai-error {
+    background: #452a2a;
+    border-color: #b94a4a;
+    color: #f87171;
   }
 }

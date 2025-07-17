@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { getColorPalette } from '../libs/colorUtils';
 
 interface ColorPickerProps {
   value: string;
@@ -10,12 +11,8 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, className = 
   const [isOpen, setIsOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
 
-  // Predefined color palette
-  const colors = [
-    '#ef4444', '#f97316', '#eab308', '#22c55e', 
-    '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899',
-    '#6b7280', '#1f2937', '#000000', '#ffffff'
-  ];
+  // Get colors from the centralized utility
+  const colors = getColorPalette();
 
   // Close picker when clicking outside
   useEffect(() => {

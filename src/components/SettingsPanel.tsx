@@ -1,23 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import type {ExtensionConfig} from '../types';
-import { ExtensionStorage } from '../libs/storage';
+import type { ExtensionConfig } from '../types';
+import { loadConfig, saveConfig, StoredConfig } from '../libs/storage';
+import { LMStudioConfig } from '../libs/aiUtils';
 import ConfigurationPanel from './ConfigurationPanel';
+import AISettings from './AISettings';
 
 interface Props {
   onSettingsChange: () => void;
 }
 
 const SettingsPanel: React.FC<Props> = ({ onSettingsChange }) => {
-  const [config, setConfig] = useState<ExtensionConfig | null>(null);
+  const [config, setConfig] = useState<StoredConfig | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'projects' | 'ai'>('projects');
 
   useEffect(() => {
-    loadConfig();
+    loadStoredConfig();
   }, []);
 
-  const loadConfig = async () => {
+  const loadStoredConfig = async () => {
     try {
-      const currentConfig = await ExtensionStorage.getConfig();
+      const currentConfig = await loadConfig();
       setConfig(currentConfig);
     } catch (error) {
       console.error('Error loading config:', error);
@@ -27,20 +30,34 @@ const SettingsPanel: React.FC<Props> = ({ onSettingsChange }) => {
   };
 
   const handleConfigSave = async (newConfig: ExtensionConfig) => {
+    if (!config) return;
+
     try {
-      await ExtensionStorage.saveConfig(newConfig);
-      setConfig(newConfig);
+      const updatedConfig: StoredConfig = {
+        ...newConfig,
+        aiConfig: config.aiConfig
+      };
+      await saveConfig(updatedConfig);
+      setConfig(updatedConfig);
       onSettingsChange();
     } catch (error) {
       console.error('Error saving config:', error);
     }
   };
 
-  const handleAutoDetectToggle = async (enabled: boolean) => {
+  const handleAIConfigSave = async (aiConfig: LMStudioConfig) => {
     if (!config) return;
     
-    const updatedConfig = { ...config, autoDetectLanguages: enabled };
-    await handleConfigSave(updatedConfig);
+    try {
+      const updatedConfig: StoredConfig = {
+        ...config,
+        aiConfig
+      };
+      await saveConfig(updatedConfig);
+      setConfig(updatedConfig);
+    } catch (error) {
+      console.error('Error saving AI config:', error);
+    }
   };
 
   if (loading) {
@@ -55,7 +72,7 @@ const SettingsPanel: React.FC<Props> = ({ onSettingsChange }) => {
   if (!config) {
     return (
       <div className="settings-error">
-        <p>Error loading settings. Please try again.</p>
+        <p>Failed to load settings</p>
       </div>
     );
   }
@@ -63,33 +80,42 @@ const SettingsPanel: React.FC<Props> = ({ onSettingsChange }) => {
   return (
     <div className="settings-panel">
       <div className="settings-header">
-        <h2>Extension Settings</h2>
-      </div>
-
-      <div className="settings-section">
-        <div className="setting-item">
-          <label className="setting-label">
-            <input
-              type="checkbox"
-              checked={config.autoDetectLanguages}
-              onChange={(e) => handleAutoDetectToggle(e.target.checked)}
-            />
-            Auto-detect available languages
-          </label>
-          <p className="setting-description">
-            Automatically detect available languages from page links and alternate tags
-          </p>
+        <h2>Settings</h2>
+        <div className="settings-tabs">
+          <button
+            className={`tab-btn ${activeTab === 'projects' ? 'active' : ''}`}
+            onClick={() => setActiveTab('projects')}
+          >
+            Projects & Environments
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'ai' ? 'active' : ''}`}
+            onClick={() => setActiveTab('ai')}
+          >
+            🤖 AI Settings
+          </button>
         </div>
       </div>
 
-      <div className="settings-section">
-        <h3>Environment Configuration</h3>
-        <ConfigurationPanel
-          config={config}
-          onSave={handleConfigSave}
-          standalone={true}
-        />
-      </div>
+      {activeTab === 'projects' && (
+        <div className="settings-section">
+          <ConfigurationPanel
+            config={config}
+            onSave={handleConfigSave}
+            standalone
+          />
+        </div>
+      )}
+
+      {activeTab === 'ai' && (
+        <div className="settings-section">
+          <h3>AI Environment Naming</h3>
+          <AISettings
+            config={config.aiConfig!}
+            onConfigChange={handleAIConfigSave}
+          />
+        </div>
+      )}
     </div>
   );
 };

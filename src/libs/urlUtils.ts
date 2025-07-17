@@ -66,3 +66,50 @@ export class URLUtils {
     }
   }
 }
+
+/**
+ * Extract the base domain from a URL
+ * @param url - Full URL string
+ * @returns Base domain (protocol + hostname + port if non-standard)
+ */
+export const extractBaseDomain = (url: string): string => {
+  try {
+    const urlObj = new URL(url);
+    // Include port if it's not the default for the protocol
+    const port = urlObj.port &&
+      ((urlObj.protocol === 'https:' && urlObj.port !== '443') ||
+       (urlObj.protocol === 'http:' && urlObj.port !== '80'))
+      ? `:${urlObj.port}` : '';
+
+    return `${urlObj.protocol}//${urlObj.hostname}${port}`;
+  } catch (error) {
+    throw new Error('Invalid URL provided');
+  }
+};
+
+/**
+ * Get the current tab's URL from the browser
+ * @returns Promise that resolves to the current tab's URL
+ */
+export const getCurrentTabUrl = async (): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    if (typeof chrome !== 'undefined' && chrome.tabs) {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
+
+        const currentTab = tabs[0];
+        if (currentTab?.url) {
+          resolve(currentTab.url);
+        } else {
+          reject(new Error('Could not get current tab URL'));
+        }
+      });
+    } else {
+      // Fallback for development or non-extension environment
+      resolve(window.location.href);
+    }
+  });
+};
