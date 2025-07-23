@@ -30,7 +30,6 @@ export default defineConfig({
         popup: resolve(__dirname, 'index.html'),
         background: resolve(__dirname, 'src/background.ts'),
         'content-script': resolve(__dirname, 'src/content-script.ts'),
-        'changeFavicons': resolve(__dirname, 'src/changeFavicons.ts'),
       },
       output: {
         entryFileNames: (chunkInfo) => {
