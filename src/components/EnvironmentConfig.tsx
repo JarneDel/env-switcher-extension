@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronDown, X } from 'lucide-react';
 import type { Environment } from '../types';
 import ColorPicker from './ColorPicker';
@@ -16,12 +16,26 @@ const EnvironmentConfig: React.FC<Props> = ({
   errors
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { collapseProps, shouldRender } = useCollapse({ isCollapsed });
 
   const {
     handleEnvironmentChange,
-    removeEnvironment
+    removeEnvironment,
+    newlyAddedEnvironments,
+    clearNewlyAddedStatus
   } = useConfiguration();
+
+  // Auto-expand newly added environments
+  useEffect(() => {
+    if (newlyAddedEnvironments.has(environment.id)) {
+      setIsCollapsed(false);
+      // Clear the newly added status after a delay to allow animation
+      setTimeout(() => {
+        clearNewlyAddedStatus(undefined, environment.id);
+      }, 300);
+    }
+  }, [environment.id, newlyAddedEnvironments, clearNewlyAddedStatus]);
+
+  const { collapseProps, shouldRender } = useCollapse({ isCollapsed });
 
   return (
     <div className={`env-config nested ${errors.length > 0 ? 'has-errors' : ''}`}>

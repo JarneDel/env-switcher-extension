@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Settings, AlertTriangle, Save } from 'lucide-react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import type {Environment, TabInfo, ExtensionConfig, LanguageOption} from './types';
 import { ExtensionStorage } from './libs/storage';
 import { URLUtils } from './libs/urlUtils';
-import EnvironmentSwitcher from './components/EnvironmentSwitcher';
-import LanguageSwitcher from './components/LanguageSwitcher';
-import SettingsPanel from './components/SettingsPanel';
+import MainView from './components/MainView';
+import SettingsView from './components/SettingsView';
 import SetupWelcome from './components/SetupWelcome';
 import './App.css';
 
@@ -13,10 +12,12 @@ function App() {
   const [config, setConfig] = useState<ExtensionConfig | null>(null);
   const [currentTab, setCurrentTab] = useState<TabInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentView, setCurrentView] = useState<'main' | 'settings' | 'setup'>('main');
   const [isConfigured, setIsConfigured] = useState(false);
   const [saveHandler, setSaveHandler] = useState<(() => void) | null>(null);
   const [hasErrors, setHasErrors] = useState<(() => boolean) | null>(null);
+
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     loadInitialData();
@@ -36,54 +37,60 @@ function App() {
     }
   }, []);
 
+  useEffect(() => {
+    // Navigate to setup if not configured and not already on setup/settings
+    if (!loading && !isConfigured && location.pathname === '/') {
+      navigate('/setup');
+    }
+  }, [loading, isConfigured, location.pathname, navigate]);
+
+  const getCurrentTabInfo = async (extensionConfig: ExtensionConfig) => {
+    if (typeof chrome === 'undefined' || !chrome.tabs?.query) {
+      return null;
+    }
+
+    try {
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      const activeTab = tabs[0];
+
+      if (!activeTab?.url) {
+        return null;
+      }
+
+      const currentEnv = URLUtils.detectCurrentEnvironment(activeTab.url, extensionConfig.environments);
+      const currentLang = URLUtils.extractLanguageFromUrl(activeTab.url);
+
+      // Try to get available languages from content script
+      let availableLanguages = [];
+      try {
+        const response = await chrome.tabs.sendMessage(activeTab.id!, { action: 'getLanguages' });
+        availableLanguages = response?.languages || [];
+      } catch {
+        // Content script not available, use empty array
+      }
+
+      return {
+        url: activeTab.url,
+        currentEnvironment: currentEnv,
+        currentLanguage: currentLang,
+        availableLanguages
+      };
+    } catch {
+      return null;
+    }
+  };
+
   const loadInitialData = async () => {
     try {
-      // Load configuration
       const extensionConfig = await ExtensionStorage.getConfig();
       const configured = await ExtensionStorage.isConfigured();
       
       setConfig(extensionConfig);
       setIsConfigured(configured);
 
-      if (!configured) {
-        setCurrentView('setup');
-        setLoading(false);
-        return;
-      }
-
-      // Get current tab info
-      if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
-        try {
-          const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-          if (Array.isArray(tabs) && tabs[0]) {
-            const currentEnv = URLUtils.detectCurrentEnvironment(tabs[0].url!, extensionConfig.environments);
-            const currentLang = URLUtils.extractLanguageFromUrl(tabs[0].url!);
-
-            // Get available languages from content script
-            try {
-              const response = await chrome.tabs.sendMessage(tabs[0].id!, { action: 'getLanguages' });
-              setCurrentTab({
-                url: tabs[0].url!,
-                currentEnvironment: currentEnv,
-                currentLanguage: currentLang,
-                availableLanguages: response?.languages || []
-              });
-            } catch (err) {
-              setCurrentTab({
-                url: tabs[0].url!,
-                currentEnvironment: currentEnv,
-                currentLanguage: currentLang,
-                availableLanguages: []
-              });
-            }
-          } else {
-            setCurrentTab(null);
-          }
-        } catch (err) {
-          setCurrentTab(null);
-        }
-      } else {
-        setCurrentTab(null);
+      if (configured) {
+        const tabInfo = await getCurrentTabInfo(extensionConfig);
+        setCurrentTab(tabInfo);
       }
     } catch (error) {
       console.error('Error loading initial data:', error);
@@ -131,22 +138,16 @@ function App() {
 
   const handleSettingsChange = async () => {
     await loadInitialData();
-    setCurrentView('main');
+    navigate('/');
   };
 
   const handleStartSetup = () => {
-    setCurrentView('settings');
+    navigate('/settings');
   };
 
   const handleSaveReady = (saveHandlerFn: () => void, hasErrorsFn: () => boolean) => {
     setSaveHandler(() => saveHandlerFn);
     setHasErrors(() => hasErrorsFn);
-  };
-
-  const handleSaveClick = () => {
-    if (saveHandler) {
-      saveHandler();
-    }
   };
 
   if (loading) {
@@ -158,115 +159,40 @@ function App() {
     );
   }
 
-  if (currentView === 'setup') {
-    return (
-      <div className="app">
-        <SetupWelcome onStartSetup={handleStartSetup} />
-      </div>
-    );
-  }
-
-  if (currentView === 'settings') {
-    return (
-      <div className="app">
-        <header className="app-header">
-          <h1>Settings</h1>
-          <div className="header-actions">
-            {saveHandler && (
-              <button
-                className="save-btn"
-                onClick={handleSaveClick}
-                disabled={hasErrors ? hasErrors() : false}
-                title="Save changes"
-              >
-                <Save size={16} />
-              </button>
-            )}
-            <button
-              className="back-btn"
-              onClick={() => setCurrentView(isConfigured ? 'main' : 'setup')}
-              title="Go back"
-            >
-              ←
-            </button>
-          </div>
-        </header>
-        <SettingsPanel onSettingsChange={handleSettingsChange} onSaveReady={handleSaveReady} />
-      </div>
-    );
-  }
-
-  // No environments configured state
-  if (!isConfigured && currentView === 'main') {
-    return (
-      <div className="app">
-        <header className="app-header">
-          <h1>Environment Switcher</h1>
-          <button 
-            className="config-btn"
-            onClick={() => setCurrentView('settings')}
-            title="Configure environments"
-          >
-            <Settings size={20} />
-          </button>
-        </header>
-        <div className="no-config">
-          <div className="no-config-icon"><AlertTriangle size={40} /></div>
-          <h3>No Environments Configured</h3>
-          <p>Please configure your environments to start switching.</p>
-          <button 
-            onClick={() => setCurrentView('settings')}
-            className="setup-btn"
-          >
-            Configure Now
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="app">
-      <header className="app-header">
-        <h1>Environment Switcher</h1>
-        <button 
-          className="config-btn"
-          onClick={() => setCurrentView('settings')}
-          title="Configure environments"
-        >
-          <Settings size={20} />
-        </button>
-      </header>
-
-      <div className="switchers">
-        <EnvironmentSwitcher
-          environments={config?.environments || []}
-          projects={config?.projects || []}
-          currentEnvironment={currentTab?.currentEnvironment}
-          onSwitch={handleEnvironmentSwitch}
+      <Routes>
+        <Route
+          path="/setup"
+          element={<SetupWelcome onStartSetup={handleStartSetup} />}
         />
 
-        {(currentTab?.availableLanguages?.length ?? 0) > 0 && (
-          <LanguageSwitcher
-            languages={currentTab?.availableLanguages}
-            currentLanguage={currentTab?.currentLanguage}
-            onSwitch={handleLanguageSwitch}
-          />
-        )}
+        <Route
+          path="/settings/*"
+          element={
+            <SettingsView
+              isConfigured={isConfigured}
+              saveHandler={saveHandler}
+              hasErrors={hasErrors}
+              onSettingsChange={handleSettingsChange}
+              onSaveReady={handleSaveReady}
+            />
+          }
+        />
 
-        {currentTab && (
-          <div className="current-info">
-            <div className="current-url">
-              <strong>Current:</strong> {new URL(currentTab.url).hostname}
-            </div>
-            {currentTab.currentLanguage && (
-              <div className="current-language">
-                <strong>Language:</strong> {currentTab.currentLanguage}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+        <Route
+          path="/"
+          element={
+            <MainView
+              config={config}
+              currentTab={currentTab}
+              isConfigured={isConfigured}
+              onEnvironmentSwitch={handleEnvironmentSwitch}
+              onLanguageSwitch={handleLanguageSwitch}
+            />
+          }
+        />
+      </Routes>
     </div>
   );
 }

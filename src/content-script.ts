@@ -30,7 +30,8 @@ class URLUtils {
         const envUrl = new URL(env.baseUrl);
         const currentUrlObj = new URL(currentUrl);
 
-        if (currentUrlObj.hostname === envUrl.hostname) {
+        // Compare both hostname and port to properly distinguish localhost environments
+        if (currentUrlObj.hostname === envUrl.hostname && currentUrlObj.port === envUrl.port) {
           return env;
         }
       } catch (error) {

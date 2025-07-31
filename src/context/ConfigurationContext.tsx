@@ -5,6 +5,9 @@ import { useConfigurationState } from '../hooks/useConfigurationState';
 interface ConfigurationContextType {
   editingProjects: Project[];
   editingEnvironments: Environment[];
+  newlyAddedProjects: Set<string>;
+  newlyAddedEnvironments: Set<string>;
+  clearNewlyAddedStatus: (projectId?: string, environmentId?: string) => void;
   configurationPanel: React.RefObject<HTMLDivElement | null>;
   handleProjectChange: (index: number, field: keyof Project, value: string) => void;
   addProject: () => void;

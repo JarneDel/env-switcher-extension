@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+/dist.crx
+/dist.pem
+/env-switcher-chrome.zip
+/env-switcher-firefox.zip
+
+dist-firefox
+dist-chrome

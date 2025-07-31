@@ -9,6 +9,7 @@
     "build:chrome": "tsc -b && TARGET_BROWSER=chrome vite build",
     "build:firefox": "tsc -b && TARGET_BROWSER=firefox vite build",
     "watch:firefox": "TARGET_BROWSER=firefox vite build --watch",
+    "watch:chrome": "TARGET_BROWSER=chome vite build --watch",
     "package:chrome": "npm run build:chrome && cd dist && zip -r ../env-switcher-chrome.zip .",
     "package:firefox": "npm run build:firefox && cd dist && zip -r ../env-switcher-firefox.zip .",
     "lint": "eslint .",
@@ -17,13 +18,17 @@
   "dependencies": {
     "lucide-react": "^0.525.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^6.20.1",
+    "react-transition-group": "^4.4.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",
     "@types/chrome": "^0.0.329",
     "@types/react": "^19.1.8",
+    "@types/node": "^24.1.0",
     "@types/react-dom": "^19.1.6",
+    "@types/react-transition-group": "^4.4.12",
     "@types/webextension-polyfill": "^0.12.3",
     "@vitejs/plugin-react": "^4.5.2",
     "eslint": "^9.29.0",

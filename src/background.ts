@@ -5,7 +5,7 @@ class Background {
   init() {
     // Handle extension install
     chrome.runtime.onInstalled.addListener(() => {
-      console.debug('Environment Switcher extension installed');
+      // Environment Switcher extension installed - silently handle
     });
 
     // Handle tab updates to inject favicon script and refresh favicons
@@ -23,7 +23,7 @@ class Background {
             files: ['changeFavicons.js']
           });
         } catch (error) {
-          console.error('Failed to inject favicon script:', error);
+          // Failed to inject favicon script - silently handle
         }
       }
     });
@@ -37,7 +37,7 @@ class Background {
           await this.sendMessageSafely(activeInfo.tabId, { action: 'refreshFavicon' });
         }
       } catch (error) {
-        console.error('Failed to refresh favicon on tab activation:', error);
+        // Failed to refresh favicon on tab activation - silently handle
       }
     });
 
@@ -56,7 +56,7 @@ class Background {
           }
         }
       } catch (error) {
-        console.error('Failed to refresh favicon on window focus:', error);
+        // Failed to refresh favicon on window focus - silently handle
       }
     });
 
@@ -76,8 +76,7 @@ class Background {
     try {
       await chrome.tabs.sendMessage(tabId, message);
     } catch (error: any) {
-      // Ignore connection errors - the tab might not have content scripts loaded
-      console.debug('Could not send message to tab:', tabId, error.message);
+      // Could not send message to tab - silently handle
     }
   }
 
@@ -94,7 +93,7 @@ class Background {
         }
       }
     } catch (error) {
-      console.error('Failed to refresh all tab favicons:', error);
+      // Failed to refresh all tab favicons - silently handle
     }
   }
 }

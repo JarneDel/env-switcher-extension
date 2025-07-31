@@ -5,7 +5,8 @@ export class URLUtils {
     const urlObj = new URL(url);
     return environments.find(env => {
       const envUrl = new URL(env.baseUrl);
-      return urlObj.hostname === envUrl.hostname;
+      // Compare hostname and port to properly distinguish localhost environments
+      return urlObj.hostname === envUrl.hostname && urlObj.port === envUrl.port;
     });
   }
 

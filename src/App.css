@@ -1,14 +1,18 @@
 #root {
     width: 460px;
-    min-height: 800px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     background: #ffffff;
     border-radius: 8px;
     height: 100%;
+    min-height: 600px;
 }
 
 html {
     overflow: hidden;
+}
+
+body {
+    min-height: 600px;
 }
 
 .app {
@@ -17,7 +21,6 @@ html {
     height: 100dvh;
     background: #f9fafb;
     color: #1f2937;
-    overflow-y: scroll;
 }
 
 .app.loading {
@@ -59,7 +62,8 @@ html {
     color: #1e293b;
 }
 
-.config-btn, .back-btn {
+.config-btn,
+.back-btn {
     background: none;
     border: none;
     font-size: 1.25rem;
@@ -69,7 +73,8 @@ html {
     transition: background-color 0.2s;
 }
 
-.config-btn:hover, .back-btn:hover {
+.config-btn:hover,
+.back-btn:hover {
     background: #e2e8f0;
 }
 
@@ -191,7 +196,8 @@ html {
     overflow-y: auto;
 }
 
-.settings-loading, .settings-error {
+.settings-loading,
+.settings-error {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -218,30 +224,6 @@ html {
     margin: 0;
     font-size: 1.125rem;
     color: #1e293b;
-}
-
-.header-save-btn {
-    background: #3b82f6;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 0.5rem 0.75rem;
-    cursor: pointer;
-    font-size: 0.875rem;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: background-color 0.2s;
-}
-
-.header-save-btn:hover:not(:disabled) {
-    background: #2563eb;
-}
-
-.header-save-btn:disabled {
-    background: #9ca3af;
-    cursor: not-allowed;
 }
 
 .settings-section {
@@ -338,7 +320,7 @@ html {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0;
 }
 
 .env-number {
@@ -354,17 +336,16 @@ html {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    margin-bottom: 0.75rem; /* Added for consistent spacing */
+    margin-bottom: 0.75rem;
 }
 
 .input-group:not(:first-child) {
-    margin-top: .75rem; /* Added for consistent spacing */
+    margin-top: .75rem;
 }
 
 .input-group:last-child {
     margin-bottom: 0;
 }
-
 
 .input-group label {
     font-size: 0.75rem;
@@ -400,7 +381,7 @@ html {
     border-radius: 4px;
     font-size: 0.875rem;
     transition: border-color 0.2s, box-shadow 0.2s;
-    height: 38px; /* Consistent height */
+    height: 38px;
     box-sizing: border-box;
 }
 
@@ -633,12 +614,10 @@ html {
     color: #000000;
 }
 
-
 /* === REVISED CUSTOM COLOR PICKER STYLES === */
-
 .custom-color-picker {
-    position: relative; /* Needed for absolute positioning of the palette */
-    height: 38px; /* Match the height of other inputs */
+    position: relative;
+    height: 38px;
     width: 100%;
 }
 
@@ -649,7 +628,7 @@ html {
     border-radius: 4px;
     cursor: pointer;
     padding: 0;
-    background-color: transparent; /* The actual color comes from an inline style */
+    background-color: transparent;
     transition: border-color 0.2s;
 }
 
@@ -665,9 +644,9 @@ html {
 
 .color-palette {
     position: absolute;
-    top: calc(100% + 4px); /* Position below the preview button with a 4px gap */
-    right: 0; /* Align to the right of the container */
-    z-index: 1000; /* Ensure it appears above other content */
+    top: calc(100% + 4px);
+    right: 0;
+    z-index: 1000;
     background: white;
     border: 1px solid #e2e8f0;
     border-radius: 6px;
@@ -693,7 +672,7 @@ html {
     border-radius: 3px;
     cursor: pointer;
     transition: all 0.15s;
-    background-color: transparent; /* Color comes from inline style */
+    background-color: transparent;
     padding: 0;
 }
 
@@ -726,7 +705,13 @@ html {
     margin-bottom: 1rem;
 }
 
-.section-header h4 {
+.section-title-area {
+    display: flex;
+    align-items: center;
+}
+
+.section-header h4,
+.section-title-area h4 {
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
@@ -767,7 +752,6 @@ html {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.75rem;
 }
 
 .project-info {
@@ -816,14 +800,19 @@ html {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.75rem;
 }
 
-.environments-header h5 {
+.environments-header h5,
+.environments-title-section h5 {
     margin: 0;
     font-size: 0.875rem;
     font-weight: 600;
     color: #6b7280;
+}
+
+.environments-title-section {
+    display: flex;
+    align-items: center;
 }
 
 .environment-actions {
@@ -913,16 +902,17 @@ html {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     padding: 0.25rem;
     margin-right: 0.5rem;
     border-radius: 4px;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
+    transform-origin: center;
 }
 
 .collapse-btn.small {
@@ -937,61 +927,13 @@ html {
     transform: scale(1.1);
 }
 
-.section-title-area {
-    display: flex;
-    align-items: center;
+.collapse-btn:active {
+    transform: scale(0.95);
 }
 
-.section-title-area h4 {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #374151;
+.collapse-btn svg {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
-.environments-title-section {
-    display: flex;
-    align-items: center;
-}
-
-.environments-title-section h5 {
-    margin: 0;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #6b7280;
-}
-
-/* Update existing section-header to use flexbox properly */
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-/* Update existing environments-header to use flexbox properly */
-.environments-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-}
-
-/* Dark mode for collapse functionality */
-@media (prefers-color-scheme: dark) {
-    .collapse-btn:hover {
-        background: #374151;
-    }
-
-    .section-title-area h4 {
-        color: #e5e7eb;
-    }
-
-    .environments-title-section h5 {
-        color: #9ca3af;
-    }
-}
-
 
 /* Accordion Animation Styles */
 .project-content,
@@ -1032,63 +974,10 @@ html {
     transform: translateY(-10px);
 }
 
-/* Enhanced collapse button styles */
-.collapse-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 0.75rem;
-    padding: 0.25rem;
-    margin-right: 0.5rem;
-    border-radius: 4px;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    transform-origin: center;
-}
-
-.collapse-btn.small {
-    width: 18px;
-    height: 18px;
-    font-size: 0.7rem;
-    margin-right: 0.375rem;
-}
-
-.collapse-btn:hover {
-    background: #e5e7eb;
-    transform: scale(1.1);
-}
-
-.collapse-btn:active {
-    transform: scale(0.95);
-}
-
-/* Smooth icon rotation */
-.collapse-btn svg {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Updated project info layout */
-.project-info {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-}
-
 /* Environment header layout */
 .env-header-left {
     display: flex;
     align-items: center;
-}
-
-.env-config-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0;
 }
 
 /* Settings Tabs Styles */
@@ -1141,7 +1030,6 @@ html {
     border-radius: 2px 2px 0 0;
 }
 
-
 /* === DARK MODE STYLES === */
 @media (prefers-color-scheme: dark) {
     .app {
@@ -1158,20 +1046,28 @@ html {
         color: #f9fafb;
     }
 
-    .config-btn, .back-btn {
+    .config-btn,
+    .back-btn {
         color: #d1d5db;
     }
 
-    .config-btn:hover, .back-btn:hover {
+    .config-btn:hover,
+    .back-btn:hover {
         background: #374151;
     }
 
     /* Welcome, Empty, & Settings States */
-    .setup-welcome h2, .no-config h3, .empty-state h4, .settings-header h2 {
+    .setup-welcome h2,
+    .no-config h3,
+    .empty-state h4,
+    .settings-header h2 {
         color: #f9fafb;
     }
 
-    .setup-welcome p, .no-config p, .empty-state p, .setting-description {
+    .setup-welcome p,
+    .no-config p,
+    .empty-state p,
+    .setting-description {
         color: #9ca3af;
     }
 
@@ -1197,17 +1093,30 @@ html {
     }
 
     /* Config Panel */
-    .env-config, .empty-state, .current-info {
+    .env-config,
+    .empty-state,
+    .current-info,
+    .fallback-message {
         background: #1f2937;
         border-color: #374151;
     }
 
-    .env-config.has-errors {
+    .env-config.has-errors,
+    .project-config.has-errors,
+    .no-models,
+    .ai-error {
         background: #452a2a;
         border-color: #b94a4a;
     }
 
-    .env-number {
+    .env-config.has-errors,
+    .no-models,
+    .ai-error {
+        color: #f87171;
+    }
+
+    .env-number,
+    .project-number {
         background: #374151;
         color: #d1d5db;
     }
@@ -1216,13 +1125,17 @@ html {
         color: #9ca3af;
     }
 
-    .env-input {
+    .env-input,
+    .setting-input,
+    .setting-select {
         background: #374151;
         border-color: #4b5563;
         color: #f3f4f6;
     }
 
-    .env-input:focus {
+    .env-input:focus,
+    .setting-input:focus,
+    .setting-select:focus {
         background-color: #1f2937;
         border-color: #3b82f6;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
@@ -1266,7 +1179,9 @@ html {
         color: white;
     }
 
-    .current-info, .current-info strong, .current-info > div {
+    .current-info,
+    .current-info strong,
+    .current-info > div {
         color: #d1d5db;
     }
 
@@ -1285,23 +1200,15 @@ html {
     }
 
     /* Project Management Dark Mode */
-    .section-header h4 {
+    .section-header h4,
+    .section-title-area h4,
+    .fallback-message h4 {
         color: #e5e7eb;
     }
 
     .project-config {
         background: #1f2937;
         border-color: #374151;
-    }
-
-    .project-config.has-errors {
-        background: #452a2a;
-        border-color: #b94a4a;
-    }
-
-    .project-number {
-        background: #374151;
-        color: #d1d5db;
     }
 
     .env-count {
@@ -1312,7 +1219,8 @@ html {
         border-top-color: #374151;
     }
 
-    .environments-header h5 {
+    .environments-header h5,
+    .environments-title-section h5 {
         color: #9ca3af;
     }
 
@@ -1334,15 +1242,6 @@ html {
     }
 
     /* Fallback Message Dark Mode */
-    .fallback-message {
-        background: #1f2937;
-        border-color: #374151;
-    }
-
-    .fallback-message h4 {
-        color: #f9fafb;
-    }
-
     .fallback-message p {
         color: #d1d5db;
     }
@@ -1372,16 +1271,8 @@ html {
         align-items: center;
     }
 
-    .setting-input, .setting-select {
-        background: #374151;
-        border-color: #4b5563;
-        color: #f3f4f6;
-    }
-
-    .setting-input:focus, .setting-select:focus {
-        background-color: #1f2937;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    .model-loading {
+        color: #9ca3af;
     }
 
     .test-connection-btn {
@@ -1425,40 +1316,7 @@ html {
         background: #dc2626;
     }
 
-    .model-loading {
-        color: #9ca3af;
-    }
-
-    .no-models {
-        background: #452a2a;
-        border-color: #b94a4a;
-        color: #f87171;
-    }
-
-    .ai-error {
-        background: #452a2a;
-        border-color: #b94a4a;
-        color: #f87171;
-    }
-
-    /* Settings Panel Dark Mode */
-    .settings-header {
-        border-bottom-color: #374151;
-    }
-
-    .header-save-btn {
-        background: #3b82f6;
-    }
-
-    .header-save-btn:hover:not(:disabled) {
-        background: #2563eb;
-    }
-
-    .header-save-btn:disabled {
-        background: #6b7280;
-    }
-
-
+    /* Settings Tabs */
     .tab-btn {
         color: #9ca3af;
     }
@@ -1473,4 +1331,40 @@ html {
         color: #f9fafb;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
     }
+
+    .collapse-btn:hover {
+        background: #374151;
+    }
+}
+
+.collapse-wrapper {
+    --duration: 200ms;
+    overflow: hidden;
+    transition: max-height var(--duration) cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.collapse-wrapper.expanded {
+    max-height: 2000px;
+    opacity: 1;
+    transition: max-height var(--duration) cubic-bezier(0.4, 0.0, 0.2, 1),
+    opacity calc(var(--duration) * 0.6) cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.collapse-wrapper.collapsed {
+    max-height: 0;
+    opacity: 0;
+    transition: max-height var(--duration) cubic-bezier(0.4, 0.0, 0.2, 1),
+    opacity calc(var(--duration) * 0.3) cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.project-name {
+    color: inherit;
+}
+
+.project-description {
+    color: #9ca3af;
+}
+
+.no-environments {
+    color: #9ca3af;
 }

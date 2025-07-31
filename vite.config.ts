@@ -21,7 +21,7 @@ export default defineConfig({
     })
   ],
   build: {
-    outDir: 'dist',
+    outDir: targetBrowser === 'firefox' ? 'dist-firefox' : 'dist-chrome',
     emptyOutDir: true,
     sourcemap: false,
     minify: true,

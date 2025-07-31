@@ -15,6 +15,10 @@ export const useConfigurationState = (config: ExtensionConfig) => {
     config.environments.map(env => ({ ...env }))
   );
 
+  // Track newly added items for auto-expand functionality
+  const [newlyAddedProjects, setNewlyAddedProjects] = useState<Set<string>>(new Set());
+  const [newlyAddedEnvironments, setNewlyAddedEnvironments] = useState<Set<string>>(new Set());
+
   const configurationPanel = useRef<HTMLDivElement>(null);
 
   // Notify background script when environments change
@@ -45,6 +49,9 @@ export const useConfigurationState = (config: ExtensionConfig) => {
       color: getRandomColor()
     };
     setEditingProjects([...editingProjects, newProject]);
+
+    // Mark as newly added for auto-expand
+    setNewlyAddedProjects(prev => new Set(prev).add(newProject.id));
   };
 
   const removeProject = (index: number) => {
@@ -86,6 +93,7 @@ export const useConfigurationState = (config: ExtensionConfig) => {
         color: getRandomColor()
       };
       setEditingProjects([...editingProjects, defaultProject]);
+      setNewlyAddedProjects(prev => new Set(prev).add(defaultProject.id));
       targetProjectId = defaultProject.id;
     }
 
@@ -97,6 +105,10 @@ export const useConfigurationState = (config: ExtensionConfig) => {
       projectId: targetProjectId!
     };
     setEditingEnvironments([...editingEnvironments, newEnv]);
+
+    // Mark as newly added for auto-expand
+    setNewlyAddedEnvironments(prev => new Set(prev).add(newEnv.id));
+
     // scroll to the bottom to show the new environment
     setTimeout(() => {
       if (configurationPanel.current) {
@@ -123,6 +135,7 @@ export const useConfigurationState = (config: ExtensionConfig) => {
           color: getRandomColor()
         };
         setEditingProjects([...editingProjects, defaultProject]);
+        setNewlyAddedProjects(prev => new Set(prev).add(defaultProject.id));
         targetProjectId = defaultProject.id;
       }
 
@@ -152,7 +165,7 @@ export const useConfigurationState = (config: ExtensionConfig) => {
           environmentName = domainName.charAt(0).toUpperCase() + domainName.slice(1);
         }
       } catch (aiError) {
-        console.warn('AI naming failed, using fallback:', aiError);
+        // AI naming failed, using fallback - silently handle
         // Fallback to manual extraction
         const urlObj = new URL(baseDomain);
         const domainName = urlObj.hostname.replace('www.', '').split('.')[0];
@@ -169,6 +182,9 @@ export const useConfigurationState = (config: ExtensionConfig) => {
 
       setEditingEnvironments([...editingEnvironments, newEnv]);
 
+      // Mark as newly added for auto-expand
+      setNewlyAddedEnvironments(prev => new Set(prev).add(newEnv.id));
+
       // scroll to the bottom to show the new environment
       setTimeout(() => {
         if (configurationPanel.current) {
@@ -176,7 +192,7 @@ export const useConfigurationState = (config: ExtensionConfig) => {
         }
       }, 100);
     } catch (error) {
-      console.error('Failed to add current domain:', error);
+      // Failed to add current domain - silently handle
       // Fallback to regular add environment if current domain detection fails
       addEnvironment(projectId);
     }
@@ -219,9 +235,30 @@ export const useConfigurationState = (config: ExtensionConfig) => {
     return hasValidationErrors(editingProjects, editingEnvironments);
   };
 
+  // Helper function to clear newly added status
+  const clearNewlyAddedStatus = (projectId?: string, environmentId?: string) => {
+    if (projectId) {
+      setNewlyAddedProjects(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(projectId);
+        return newSet;
+      });
+    }
+    if (environmentId) {
+      setNewlyAddedEnvironments(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(environmentId);
+        return newSet;
+      });
+    }
+  };
+
   return {
     editingProjects,
     editingEnvironments,
+    newlyAddedProjects,
+    newlyAddedEnvironments,
+    clearNewlyAddedStatus,
     configurationPanel,
     handleProjectChange,
     addProject,
