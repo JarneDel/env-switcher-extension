@@ -1,6 +1,8 @@
 
 # Environment Switcher Browser Extension
 
+[![Firefox Add-on](https://img.shields.io/amo/v/project-environment-switcher?logo=firefox-browser)](https://addons.mozilla.org/en-US/firefox/addon/project-environment-switcher/)
+
 A React-based browser extension built with TypeScript and Vite that allows users to switch between different environments.
 
 ## System Requirements
