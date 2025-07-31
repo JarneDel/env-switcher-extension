@@ -12,8 +12,8 @@
     "build:firefox": "tsc -b && TARGET_BROWSER=firefox vite build",
     "watch:chrome": "TARGET_BROWSER=chrome vite build --watch --mode development",
     "watch:firefox": "TARGET_BROWSER=firefox vite build --watch --mode development",
-    "package:chrome": "npm run build:chrome && cd dist && zip -r ../env-switcher-chrome.zip .",
-    "package:firefox": "npm run build:firefox && cd dist && zip -r ../env-switcher-firefox.zip .",
+    "package:chrome": "npm run build:chrome && cd dist-chrome && zip -r ../env-switcher-chrome.zip .",
+    "package:firefox": "npm run build:firefox && cd dist-firefox && zip -r ../env-switcher-firefox.zip .",
     "lint": "eslint .",
     "preview": "vite preview"
   },
