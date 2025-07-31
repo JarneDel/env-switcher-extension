@@ -14,7 +14,7 @@ interface ConfigurationContextType {
   removeProject: (index: number) => void;
   handleEnvironmentChange: (envId: string, field: keyof Environment, value: string) => void;
   addEnvironment: (projectId?: string) => void;
-  addCurrentDomain: (projectId?: string) => Promise<void>;
+  addCurrentDomain: (projectId?: string, useAI?: boolean) => Promise<void>;
   removeEnvironment: (envId: string) => void;
   validateProject: (project: Project) => string[];
   validateEnvironment: (env: Environment) => string[];

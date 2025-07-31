@@ -117,7 +117,7 @@ export const useConfigurationState = (config: ExtensionConfig) => {
     }, 100);
   };
 
-  const addCurrentDomain = async (projectId?: string) => {
+  const addCurrentDomain = async (projectId?: string, useAI: boolean = true) => {
     try {
       const currentUrl = await getCurrentTabUrl();
       const baseDomain = extractBaseDomain(currentUrl);
@@ -151,22 +151,29 @@ export const useConfigurationState = (config: ExtensionConfig) => {
       // Try to generate AI name, fallback to manual extraction
       let environmentName = 'New Environment';
 
-      try {
-        // Load AI config to check if AI naming is enabled
-        const storedConfig = await loadConfig();
-        const aiConfig = storedConfig.aiConfig;
+      if (useAI) {
+        try {
+          // Load AI config to check if AI naming is enabled
+          const storedConfig = await loadConfig();
+          const aiConfig = storedConfig.aiConfig;
 
-        if (aiConfig?.enabled && aiConfig.url && aiConfig.model) {
-          environmentName = await generateEnvironmentName(currentUrl, aiConfig);
-        } else {
-          // Fallback to manual extraction if AI is not configured
+          if (aiConfig?.enabled && aiConfig.url && aiConfig.model) {
+            environmentName = await generateEnvironmentName(currentUrl, aiConfig);
+          } else {
+            // Fallback to manual extraction if AI is not configured
+            const urlObj = new URL(baseDomain);
+            const domainName = urlObj.hostname.replace('www.', '').split('.')[0];
+            environmentName = domainName.charAt(0).toUpperCase() + domainName.slice(1);
+          }
+        } catch (aiError) {
+          // AI naming failed, using fallback - silently handle
+          // Fallback to manual extraction
           const urlObj = new URL(baseDomain);
           const domainName = urlObj.hostname.replace('www.', '').split('.')[0];
           environmentName = domainName.charAt(0).toUpperCase() + domainName.slice(1);
         }
-      } catch (aiError) {
-        // AI naming failed, using fallback - silently handle
-        // Fallback to manual extraction
+      } else {
+        // Skip AI and go directly to manual extraction
         const urlObj = new URL(baseDomain);
         const domainName = urlObj.hostname.replace('www.', '').split('.')[0];
         environmentName = domainName.charAt(0).toUpperCase() + domainName.slice(1);

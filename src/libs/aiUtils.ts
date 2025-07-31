@@ -53,20 +53,20 @@ export const generateEnvironmentName = async (
     throw new Error('LM Studio configuration is incomplete');
   }
 
-  const prompt = `Based on the following URL, suggest a concise, descriptive environment name (2-3 words max) that would be suitable for a development environment switcher.
+  const prompt = `You get a URL. Return only a 1–3 word Title Case environment/type name. If the URL is clearly production (contains "prod", is the root/apex domain with no dev/staging/test/beta/internal indicators, or lacks any qualifier), output Production. Otherwise infer from subdomain/path: staging, dev, test, beta, api, admin, preview, internal, etc. Do not include project or company names, punctuation, quotes, or explanation.
 
-URL: ${url}
+Examples:
+http://localhost:3000 -> Local Dev
+https://staging.example.com -> Staging
+https://api.example.com/v1 -> API Server
+https://admin.example.com/dashboard -> Admin Panel
+https://beta.example.com -> Preview
+https://internal.example.com/tools -> Internal Tools
+https://example.com -> Production
+https://prod.example.com -> Production
 
-Rules:
-- Return ONLY the environment name, nothing else
-- No quotes, no explanations, no punctuation
-- Use title case (e.g., "Local Dev", "API Server", "Admin Panel")
-- Be descriptive but concise
-- Focus on the environment type/purpose, NOT the project or company name
-- Describe what kind of environment this is (e.g., "Production", "Staging", "Development", "API", "Admin", "Dashboard")
-- Examples: "Local Dev" for localhost, "Production" for main sites, "API Server" for api endpoints, "Admin Panel" for admin interfaces
+URL: ${url}`
 
-Environment name:`;
 
   try {
     const response = await fetch(`${lmStudioConfig.url}/v1/chat/completions`, {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, X, Globe } from 'lucide-react';
+import { ChevronDown, ChevronRight, X, Sparkles, Globe, Loader2 } from 'lucide-react';
 import type { Environment, Project } from '../types';
 import ColorPicker from './ColorPicker';
 import ValidationErrors from './ValidationErrors';
@@ -24,6 +24,7 @@ const ProjectConfig: React.FC<Props> = ({
                                         }) => {
     const [isProjectCollapsed, setIsProjectCollapsed] = useState(true);
     const [isEnvironmentsCollapsed, setIsEnvironmentsCollapsed] = useState(true);
+    const [isAILoading, setIsAILoading] = useState(false);
 
     const {
         handleProjectChange,
@@ -34,6 +35,16 @@ const ProjectConfig: React.FC<Props> = ({
         newlyAddedEnvironments,
         clearNewlyAddedStatus
     } = useConfiguration();
+
+    // Handle AI domain addition with loading state
+    const handleAIAddCurrentDomain = async () => {
+        setIsAILoading(true);
+        try {
+            await addCurrentDomain(project.id, true);
+        } finally {
+            setIsAILoading(false);
+        }
+    };
 
     // Auto-expand newly added projects
     useEffect(() => {
@@ -151,9 +162,17 @@ const ProjectConfig: React.FC<Props> = ({
                                     + Add Environment
                                 </button>
                                 <button
-                                    onClick={() => addCurrentDomain(project.id)}
+                                    onClick={handleAIAddCurrentDomain}
                                     className="add-current-domain-btn icon-btn"
-                                    title="Add current domain as environment"
+                                    title="Add current domain with AI naming"
+                                    disabled={isAILoading}
+                                >
+                                    {isAILoading ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
+                                </button>
+                                <button
+                                    onClick={() => addCurrentDomain(project.id, false)}
+                                    className="add-current-domain-btn icon-btn"
+                                    title="Add current domain without AI"
                                 >
                                     <Globe size={16} />
                                 </button>
@@ -189,4 +208,3 @@ const ProjectConfig: React.FC<Props> = ({
 };
 
 export default ProjectConfig;
-
