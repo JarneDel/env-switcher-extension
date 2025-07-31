@@ -1,14 +1,22 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { viteStaticCopy } from 'vite-plugin-static-copy'
-import { resolve } from 'path'
 
-// Get target browser from environment variable
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { viteStaticCopy } from 'vite-plugin-static-copy';
+import hotReloadExtension from 'hot-reload-extension-vite';
+import { resolve } from 'path';
+
 const targetBrowser = process.env.TARGET_BROWSER || 'chrome';
 
 export default defineConfig({
   plugins: [
     react(),
+
+    // Hot reload plugin for extension development
+    hotReloadExtension({
+      log: true,
+      backgroundPath: 'src/background.ts',
+    }),
+
     viteStaticCopy({
       targets: [
         {
@@ -20,6 +28,7 @@ export default defineConfig({
       ]
     })
   ],
+
   build: {
     outDir: targetBrowser === 'firefox' ? 'dist-firefox' : 'dist-chrome',
     emptyOutDir: true,
@@ -29,26 +38,22 @@ export default defineConfig({
       input: {
         popup: resolve(__dirname, 'index.html'),
         background: resolve(__dirname, 'src/background.ts'),
-        'content-script': resolve(__dirname, 'src/content-script.ts'),
+        'content-script': resolve(__dirname, 'src/content-script.ts')
       },
       output: {
         entryFileNames: (chunkInfo) => {
-          // Extension scripts should not be hashed
-          if (chunkInfo.name === 'background' ||
-              chunkInfo.name === 'content-script' ||
-              chunkInfo.name === 'changeFavicons') {
-            return '[name].js'
+          if (chunkInfo.name === 'background' || chunkInfo.name === 'content-script') {
+            return '[name].js';
           }
-          return 'assets/[name]-[hash].js'
+          return 'assets/[name]-[hash].js';
         },
         chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]',
-        // Don't inline dynamic imports when we have multiple inputs
-        inlineDynamicImports: false
+        assetFileNames: 'assets/[name]-[hash].[ext]'
       }
     }
   },
+
   define: {
-    global: 'globalThis',
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
   }
-})
+});

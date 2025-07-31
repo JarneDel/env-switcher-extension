@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { loadConfig, saveConfig, type StoredConfig } from '../libs/storage';
 import type { LMStudioConfig } from '../libs/aiUtils';
@@ -16,6 +17,12 @@ const AISettingsPanel: React.FC<Props> = ({ onSettingsChange, onSaveReady }) => 
     loadStoredConfig();
   }, []);
 
+  useEffect(() => {
+    if (onSaveReady && config) {
+      onSaveReady(handleSave, () => false); // No validation errors for AI settings
+    }
+  }, [onSaveReady, config]);
+
   const loadStoredConfig = async () => {
     try {
       const currentConfig = await loadConfig();
@@ -27,47 +34,51 @@ const AISettingsPanel: React.FC<Props> = ({ onSettingsChange, onSaveReady }) => 
     }
   };
 
-  const handleAIConfigSave = async (aiConfig: LMStudioConfig) => {
+  const handleSave = async () => {
     if (!config) return;
 
     try {
-      const updatedConfig: StoredConfig = {
-        ...config,
-        aiConfig
-      };
-      await saveConfig(updatedConfig);
-      setConfig(updatedConfig);
+      await saveConfig(config);
       onSettingsChange();
     } catch (error) {
-      // Error saving AI config - silently handle
+      // Error saving config - silently handle
     }
+  };
+
+  const handleAIConfigChange = (aiConfig: LMStudioConfig) => {
+    if (!config) return;
+
+    setConfig({
+      ...config,
+      aiConfig
+    });
   };
 
   if (loading) {
     return (
-      <div className="settings-loading">
-        <div className="spinner"></div>
-        <p>Loading AI settings...</p>
-      </div>
+        <div className="settings-loading">
+          <div className="spinner"></div>
+          <p>Loading AI settings...</p>
+        </div>
     );
   }
 
   if (!config) {
     return (
-      <div className="settings-error">
-        <p>Failed to load AI settings</p>
-      </div>
+        <div className="settings-error">
+          <p>Failed to load AI settings</p>
+        </div>
     );
   }
 
   return (
-    <div className="settings-section">
-      <h3>AI Environment Naming</h3>
-      <AISettings
-        config={config.aiConfig!}
-        onConfigChange={handleAIConfigSave}
-      />
-    </div>
+      <div className="settings-section">
+        <h3>AI Environment Naming</h3>
+        <AISettings
+            config={config.aiConfig!}
+            onConfigChange={handleAIConfigChange}
+        />
+      </div>
   );
 };
 

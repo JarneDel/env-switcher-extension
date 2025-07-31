@@ -21,7 +21,12 @@ export class ExtensionStorage {
     return {
       environments: [],
       projects: [],
-      autoDetectLanguages: true
+      autoDetectLanguages: true,
+      faviconEnabled: true,
+      borderEnabled: true,
+      borderHeight: 3,
+      minimalBorderEnabled: false,
+      minimalBorderHeight: 4
     };
   }
 
@@ -85,6 +90,11 @@ export const loadConfig = async (): Promise<StoredConfig> => {
       projects: [],
       environments: [],
       autoDetectLanguages: true,
+      faviconEnabled: true,
+      borderEnabled: true,
+      borderHeight: 3,
+      minimalBorderEnabled: false,
+      minimalBorderHeight: 4,
       aiConfig: {
         enabled: false,
         url: 'http://localhost:1234',
@@ -101,6 +111,11 @@ export const loadConfig = async (): Promise<StoredConfig> => {
       projects: Array.isArray(config.projects) ? config.projects : [],
       environments: Array.isArray(config.environments) ? config.environments : [],
       autoDetectLanguages: typeof config.autoDetectLanguages === 'boolean' ? config.autoDetectLanguages : true,
+      faviconEnabled: typeof config.faviconEnabled === 'boolean' ? config.faviconEnabled : true,
+      borderEnabled: typeof config.borderEnabled === 'boolean' ? config.borderEnabled : true,
+      borderHeight: typeof config.borderHeight === 'number' ? config.borderHeight : 3,
+      minimalBorderEnabled: typeof config.minimalBorderEnabled === 'boolean' ? config.minimalBorderEnabled : false,
+      minimalBorderHeight: typeof config.minimalBorderHeight === 'number' ? config.minimalBorderHeight : 4,
       currentEnvironment: config.currentEnvironment,
       aiConfig: config.aiConfig || defaultStoredConfig.aiConfig
     };

@@ -1,8 +1,21 @@
 // Predefined color palette
 const colors = [
-  '#ef4444', '#f97316', '#eab308', '#22c55e',
-  '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899',
-  '#6b7280', '#1f2937', '#000000', '#ffffff'
+  '#dc2626', // Red
+  '#ea580c', // Orange
+  '#ca8a04', // Yellow
+  '#16a34a', // Green
+  '#0891b2', // Cyan
+  '#2563eb', // Blue
+  '#7c3aed', // Purple
+  '#db2777', // Pink
+  '#8b5a00', // Brown
+  '#059669', // Emerald
+  '#0284c7', // Sky Blue
+  '#9333ea', // Violet
+  '#e11d48', // Rose
+  '#84cc16', // Lime
+  '#f59e0b', // Amber
+  '#10b981'  // Teal Green
 ];
 
 /**

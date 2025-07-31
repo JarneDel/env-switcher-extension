@@ -1,15 +1,17 @@
 {
   "name": "env-switcher",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.3",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --mode development",
+    "dev:chrome": "TARGET_BROWSER=chrome vite --mode development",
+    "dev:firefox": "TARGET_BROWSER=firefox vite --mode development",
     "build": "tsc -b && vite build",
     "build:chrome": "tsc -b && TARGET_BROWSER=chrome vite build",
     "build:firefox": "tsc -b && TARGET_BROWSER=firefox vite build",
-    "watch:firefox": "TARGET_BROWSER=firefox vite build --watch",
-    "watch:chrome": "TARGET_BROWSER=chome vite build --watch",
+    "watch:chrome": "TARGET_BROWSER=chrome vite build --watch --mode development",
+    "watch:firefox": "TARGET_BROWSER=firefox vite build --watch --mode development",
     "package:chrome": "npm run build:chrome && cd dist && zip -r ../env-switcher-chrome.zip .",
     "package:firefox": "npm run build:firefox && cd dist && zip -r ../env-switcher-firefox.zip .",
     "lint": "eslint .",
@@ -25,8 +27,8 @@
   "devDependencies": {
     "@eslint/js": "^9.29.0",
     "@types/chrome": "^0.0.329",
-    "@types/react": "^19.1.8",
     "@types/node": "^24.1.0",
+    "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/react-transition-group": "^4.4.12",
     "@types/webextension-polyfill": "^0.12.3",
@@ -39,6 +41,7 @@
     "typescript-eslint": "^8.34.1",
     "vite": "^7.0.0",
     "vite-plugin-static-copy": "^3.1.0",
-    "webextension-polyfill": "^0.12.0"
+    "webextension-polyfill": "^0.12.0",
+    "hot-reload-extension-vite": "^1.0.13"
   }
 }

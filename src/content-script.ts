@@ -13,6 +13,11 @@ interface ExtensionConfig {
   environments: Environment[];
   projects: any[];
   autoDetectLanguages: boolean;
+  faviconEnabled?: boolean;
+  borderEnabled?: boolean;
+  borderHeight?: number;
+  minimalBorderEnabled?: boolean;
+  minimalBorderHeight?: number;
   currentEnvironment?: string;
 }
 
@@ -73,10 +78,12 @@ class FaviconUpdater {
   private ctx: CanvasRenderingContext2D;
   private originalBodyBorder: string = '';
   private bodyBorderApplied: boolean = false;
+  private minimalBorderManager: MinimalBorderManager;
 
   constructor() {
     this.canvas = document.createElement('canvas');
     this.ctx = this.canvas.getContext('2d')!;
+    this.minimalBorderManager = new MinimalBorderManager();
     this.init();
   }
 
@@ -141,15 +148,34 @@ class FaviconUpdater {
 
       if (environment && environment.color) {
         this.currentEnvironment = environment;
-        await this.updateFavicons(environment.color);
-        this.updateBodyBorder(environment.color);
+
+        // Only update favicon if enabled in settings
+        if (config.faviconEnabled !== false) {
+          await this.updateFavicons(environment.color);
+        }
+
+        // Only update border if enabled in settings
+        if (config.borderEnabled !== false) {
+          const borderHeight = config.borderHeight || 3; // Default to 3px if not specified
+          this.updateBodyBorder(environment.color, borderHeight);
+        }
+
+        // Only update minimal border if enabled in settings
+        if (config.minimalBorderEnabled === true) {
+          const height = config.minimalBorderHeight || 4; // Default to 4px if not specified
+          this.minimalBorderManager.show(environment.color, height);
+        } else {
+          this.minimalBorderManager.hide();
+        }
       } else {
         this.restoreOriginalFavicons();
         this.restoreOriginalBodyBorder();
+        this.minimalBorderManager.hide();
       }
     } catch (error) {
       this.restoreOriginalFavicons();
       this.restoreOriginalBodyBorder();
+      this.minimalBorderManager.hide();
     }
   }
 
@@ -178,9 +204,9 @@ class FaviconUpdater {
     }
   }
 
-  private updateBodyBorder(borderColor: string) {
+  private updateBodyBorder(borderColor: string, borderHeight: number = 3) {
     try {
-      document.documentElement.style.border = `3px solid ${borderColor}`;
+      document.documentElement.style.border = `${borderHeight}px solid ${borderColor}`;
       document.documentElement.style.boxSizing = 'border-box';
       this.bodyBorderApplied = true;
     } catch (error) {
@@ -290,6 +316,143 @@ class FaviconUpdater {
 
   public async refresh() {
     await this.updateForCurrentEnvironment();
+    this.minimalBorderManager.refresh();
+  }
+}
+
+// Minimal Border Manager Class
+class MinimalBorderManager {
+  private borderElement: HTMLDivElement | null = null;
+  private isActive: boolean = false;
+  private currentColor: string = '';
+  private height: number = 4; // Default height
+
+  constructor() {
+    this.createBorderElement();
+  }
+
+  private createBorderElement() {
+    // Create a persistent border element
+    this.borderElement = document.createElement('div');
+    this.borderElement.id = 'env-switcher-minimal-border';
+    this.borderElement.style.cssText = `
+      position: fixed !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      height: ${this.height}px !important;
+      background-color: transparent !important;
+      z-index: 2147483647 !important;
+      pointer-events: none !important;
+      display: none !important;
+      box-shadow: none !important;
+      border: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    `;
+
+    // Add to document immediately when DOM is ready
+    if (document.body) {
+      document.body.appendChild(this.borderElement);
+    } else {
+      // Wait for DOM to be ready
+      const addWhenReady = () => {
+        if (document.body) {
+          document.body.appendChild(this.borderElement!);
+        } else {
+          setTimeout(addWhenReady, 10);
+        }
+      };
+      addWhenReady();
+    }
+
+    // Ensure the border stays in place even when DOM changes
+    this.setupMutationObserver();
+  }
+
+  private setupMutationObserver() {
+    const observer = new MutationObserver(() => {
+      // Re-attach the border element if it gets removed
+      if (this.borderElement && !document.contains(this.borderElement)) {
+        if (document.body) {
+          document.body.appendChild(this.borderElement);
+        }
+      }
+    });
+
+    // Start observing when DOM is ready
+    const startObserving = () => {
+      if (document.body) {
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true
+        });
+      } else {
+        setTimeout(startObserving, 10);
+      }
+    };
+    startObserving();
+  }
+
+  public show(color: string, height?: number) {
+    if (!this.borderElement) return;
+
+    this.currentColor = color;
+    this.isActive = true;
+    if (height !== undefined) {
+      this.height = height;
+    }
+
+    this.borderElement.style.backgroundColor = `${color} !important`;
+    this.borderElement.style.height = `${this.height}px !important`;
+    this.borderElement.style.display = 'block !important';
+
+    // Ensure it stays visible by re-applying styles
+    this.ensureVisibility();
+  }
+
+  public hide() {
+    if (!this.borderElement) return;
+
+    this.isActive = false;
+    this.borderElement.style.display = 'none !important';
+    this.borderElement.style.backgroundColor = 'transparent !important';
+  }
+
+  private ensureVisibility() {
+    if (!this.isActive || !this.borderElement) return;
+
+    // Periodically ensure the border stays visible and properly styled
+    const ensureStyles = () => {
+      if (this.borderElement && this.isActive) {
+        this.borderElement.style.cssText = `
+          position: fixed !important;
+          bottom: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          height: ${this.height}px !important;
+          background-color: ${this.currentColor} !important;
+          z-index: 2147483647 !important;
+          pointer-events: none !important;
+          display: block !important;
+          box-shadow: none !important;
+          border: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        `;
+      }
+    };
+
+    // Apply styles immediately and periodically
+    ensureStyles();
+    setTimeout(ensureStyles, 100);
+    setTimeout(ensureStyles, 500);
+  }
+
+  public refresh() {
+    if (this.isActive && this.currentColor) {
+      this.show(this.currentColor, this.height);
+    }
   }
 }
 
@@ -301,7 +464,7 @@ class ContentScript {
   }
 
   private detectAlternateLanguages(): LanguageOption[] {
-    const languages: LanguageOption[] = [];
+    const languagesMap = new Map<string, LanguageOption>();
 
     // Method 1: Check for <link rel="alternate"> tags
     const alternateLinks = document.querySelectorAll('link[rel="alternate"][hreflang]');
@@ -310,7 +473,7 @@ class ContentScript {
       const href = link.getAttribute('href');
 
       if (hreflang && href && hreflang !== 'x-default') {
-        languages.push({
+        languagesMap.set(hreflang, {
           code: hreflang,
           name: this.getLanguageName(hreflang),
           url: href
@@ -319,7 +482,7 @@ class ContentScript {
     });
 
     // Method 2: Check for language switcher elements (common patterns)
-    if (languages.length === 0) {
+    if (languagesMap.size === 0) {
       const langSwitchers = document.querySelectorAll(
           '[class*="lang"], [class*="language"], [id*="lang"], [id*="language"]'
       );
@@ -334,7 +497,7 @@ class ContentScript {
             // Try to extract language code from URL or text
             const langCode = this.extractLanguageCode(href, text);
             if (langCode) {
-              languages.push({
+              languagesMap.set(langCode, {
                 code: langCode,
                 name: text,
                 url: href
@@ -346,7 +509,7 @@ class ContentScript {
     }
 
     // Method 3: Extract from current URL structure
-    if (languages.length === 0) {
+    if (languagesMap.size === 0) {
       const currentLang = this.extractLanguageFromUrl(window.location.href);
       if (currentLang) {
         // Assume common languages exist
@@ -354,7 +517,7 @@ class ContentScript {
         commonLangs.forEach(lang => {
           if (lang !== currentLang) {
             const newUrl = this.switchLanguageInUrl(window.location.href, lang);
-            languages.push({
+            languagesMap.set(lang, {
               code: lang,
               name: this.getLanguageName(lang),
               url: newUrl
@@ -364,7 +527,8 @@ class ContentScript {
       }
     }
 
-    return languages;
+    console.log('Detected languages:', Array.from(languagesMap.values()));
+    return Array.from(languagesMap.values());
   }
 
   private getLanguageName(code: string): string {

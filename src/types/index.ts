@@ -3,7 +3,7 @@ export interface Environment {
   name: string;
   baseUrl: string;
   color: string;
-  projectId: string; // New field to associate with a project
+  projectId: string;
   isActive?: boolean;
 }
 
@@ -22,9 +22,14 @@ export interface LanguageOption {
 
 export interface ExtensionConfig {
   environments: Environment[];
-  projects: Project[]; // New field for projects
+  projects: Project[];
   currentEnvironment?: string;
   autoDetectLanguages: boolean;
+  faviconEnabled?: boolean;
+  borderEnabled?: boolean;
+  borderHeight?: number;
+  minimalBorderEnabled?: boolean;
+  minimalBorderHeight?: number; //
 }
 
 export interface TabInfo {
@@ -33,5 +38,3 @@ export interface TabInfo {
   availableLanguages: LanguageOption[];
   currentLanguage?: string;
 }
-
-// Remove the DEFAULT_ENVIRONMENTS - everything will be user-configured
