@@ -8,26 +8,6 @@ class Background {
       // Environment Switcher extension installed - silently handle
     });
 
-    // Handle tab updates to inject favicon script and refresh favicons
-    chrome.tabs.onUpdated.addListener(async (tabId: number, changeInfo: any, tab: any) => {
-      if (changeInfo.status === 'complete' && tab.url) {
-        // Skip chrome:// and other extension pages
-        if (tab.url.startsWith('chrome://') || tab.url.startsWith('moz-extension://') || tab.url.startsWith('chrome-extension://')) {
-          return;
-        }
-
-        try {
-          // Inject the favicon content script
-          await chrome.scripting.executeScript({
-            target: { tabId },
-            files: ['changeFavicons.js']
-          });
-        } catch (error) {
-          // Failed to inject favicon script - silently handle
-        }
-      }
-    });
-
     // Handle tab activation (when switching between tabs)
     chrome.tabs.onActivated.addListener(async (activeInfo: any) => {
       try {
