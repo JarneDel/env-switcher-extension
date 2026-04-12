@@ -24,17 +24,11 @@ const ProjectSettingsPanel: React.FC = () => {
 
   const handleConfigSave = async (newConfig: ExtensionConfig) => {
     if (!config) return;
-
     try {
-      const updatedConfig: StoredConfig = {
-        ...newConfig,
-        aiConfig: config.aiConfig
-      };
-      await saveConfig(updatedConfig);
-      setConfig(updatedConfig);
-      onSettingsChange();
+      await saveConfig(newConfig);
+      setConfig(newConfig);
     } catch (error) {
-      // Error saving config - silently handle
+      // silently handle
     }
   };
 

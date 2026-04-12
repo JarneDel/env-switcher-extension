@@ -1,7 +1,6 @@
 import { useNavigate, Routes, Route, useLocation } from 'react-router-dom';
-import { Bot, Eye, FolderOpen } from 'lucide-react';
+import { Eye, FolderOpen } from 'lucide-react';
 import ProjectSettingsPanel from './ProjectSettingsPanel';
-import AISettingsPanel from './AISettingsPanel';
 import DisplaySettingsPanel from './DisplaySettingsPanel';
 
 interface SettingsViewProps {
@@ -17,7 +16,6 @@ export default function SettingsView({
   const location = useLocation();
 
   const isProjectsTab = location.pathname === '/settings' || location.pathname === '/settings/projects';
-  const isAITab = location.pathname === '/settings/ai';
   const isDisplayTab = location.pathname === '/settings/display';
 
   return (
@@ -46,13 +44,6 @@ export default function SettingsView({
               Projects
             </button>
             <button
-              className={`tab-btn ${isAITab ? 'active' : ''}`}
-              onClick={() => navigate('/settings/ai')}
-            >
-              <Bot size={16} />
-              AI
-            </button>
-            <button
               className={`tab-btn ${isDisplayTab ? 'active' : ''}`}
               onClick={() => navigate('/settings/display')}
             >
@@ -63,22 +54,9 @@ export default function SettingsView({
         </div>
 
         <Routes>
-          <Route
-            path="/"
-            element={<ProjectSettingsPanel />}
-          />
-          <Route
-            path="/projects"
-            element={<ProjectSettingsPanel />}
-          />
-          <Route
-            path="/ai"
-            element={<AISettingsPanel />}
-          />
-          <Route
-            path="/display"
-            element={<DisplaySettingsPanel />}
-          />
+          <Route path="/" element={<ProjectSettingsPanel />} />
+          <Route path="/projects" element={<ProjectSettingsPanel />} />
+          <Route path="/display" element={<DisplaySettingsPanel />} />
         </Routes>
       </div>
     </>

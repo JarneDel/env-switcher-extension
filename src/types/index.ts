@@ -29,7 +29,8 @@ export interface ExtensionConfig {
   borderEnabled?: boolean;
   borderHeight?: number;
   minimalBorderEnabled?: boolean;
-  minimalBorderHeight?: number; //
+  minimalBorderHeight?: number;
+  recentEnvironmentIds?: string[];
 }
 
 export interface TabInfo {

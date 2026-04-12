@@ -1,113 +1,165 @@
-import React from 'react';
-import { Globe, Folder, AlertTriangle } from 'lucide-react';
-import type {Environment, Project} from '../types';
+import React, { useState, useMemo } from 'react';
+import { Search } from 'lucide-react';
+import type { Environment, Project } from '../types';
 
 interface Props {
   environments: Environment[];
   projects: Project[];
   currentEnvironment?: Environment;
+  recentEnvironmentIds: string[];
   onSwitch: (env: Environment) => void;
   onSwitchNewTab: (env: Environment) => void;
 }
 
-const EnvironmentSwitcher: React.FC<Props> = ({ 
-  environments, 
+function fuzzyMatch(needle: string, haystack: string): boolean {
+  const n = needle.toLowerCase();
+  const h = haystack.toLowerCase();
+  let ni = 0;
+  for (let hi = 0; hi < h.length && ni < n.length; hi++) {
+    if (h[hi] === n[ni]) ni++;
+  }
+  return ni === n.length;
+}
+
+function getHostname(url: string): string {
+  try { return new URL(url).hostname; } catch { return url; }
+}
+
+const EnvironmentSwitcher: React.FC<Props> = ({
+  environments,
   projects,
   currentEnvironment,
+  recentEnvironmentIds,
   onSwitch,
-  onSwitchNewTab
+  onSwitchNewTab,
 }) => {
-  // If no environments are configured at all, don't show anything
-  if (environments.length === 0) {
-    return null;
-  }
+  const [search, setSearch] = useState('');
 
-  // If we're not on a recognized environment, show fallback message
-  if (!currentEnvironment) {
-    return (
-      <div className="switcher-section">
-        <h3>Environments</h3>
-        <div className="fallback-message">
-          <div className="fallback-icon"><Globe size={32} /></div>
-          <h4>Unknown Website</h4>
-          <p>This website doesn't match any of your configured environments.</p>
-          <p className="fallback-hint">Environment switching is only available on configured websites.</p>
-        </div>
-      </div>
+  const projectMap = useMemo(() => new Map(projects.map(p => [p.id, p])), [projects]);
+
+  const currentProject = currentEnvironment ? projectMap.get(currentEnvironment.projectId) : undefined;
+
+  const currentProjectEnvs = currentEnvironment
+    ? environments.filter(e => e.projectId === currentEnvironment.projectId)
+    : [];
+
+  const recentEnvs = useMemo(() => {
+    return recentEnvironmentIds
+      .map(id => environments.find(e => e.id === id))
+      .filter((e): e is Environment => !!e)
+      .filter(e => e.id !== currentEnvironment?.id);
+  }, [recentEnvironmentIds, environments, currentEnvironment]);
+
+  const searchGroups = useMemo(() => {
+    if (!search.trim()) return null;
+    const q = search.trim();
+    const matched = environments.filter(e =>
+      fuzzyMatch(q, e.name) || fuzzyMatch(q, getHostname(e.baseUrl)) || fuzzyMatch(q, e.baseUrl)
     );
-  }
+    const groups = new Map<string, Environment[]>();
+    for (const env of matched) {
+      if (!groups.has(env.projectId)) groups.set(env.projectId, []);
+      groups.get(env.projectId)!.push(env);
+    }
+    return groups;
+  }, [search, environments]);
 
-  // Get the current project
-  const currentProject = projects.find(p => p.id === currentEnvironment.projectId);
+  const allMatchedEnvs = useMemo(() => {
+    if (!searchGroups) return [];
+    const result: Environment[] = [];
+    for (const envs of searchGroups.values()) result.push(...envs);
+    return result;
+  }, [searchGroups]);
 
-  if (!currentProject) {
-    return (
-      <div className="switcher-section">
-        <h3>Environments</h3>
-        <div className="fallback-message">
-          <div className="fallback-icon"><AlertTriangle size={32} /></div>
-          <h4>Project Not Found</h4>
-          <p>The current environment belongs to a project that no longer exists.</p>
-          <p className="fallback-hint">Please reconfigure your environments in Settings.</p>
-        </div>
-      </div>
-    );
-  }
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter' || allMatchedEnvs.length !== 1) return;
+    e.preventDefault();
+    if (e.shiftKey) {
+      onSwitchNewTab(allMatchedEnvs[0]);
+    } else {
+      onSwitch(allMatchedEnvs[0]);
+    }
+    setSearch('');
+  };
 
-  // Filter environments to only show those from the current project
-  const currentProjectEnvironments = environments.filter(env => env.projectId === currentEnvironment.projectId);
+  if (environments.length === 0) return null;
 
-  if (currentProjectEnvironments.length === 0) {
-    return (
-      <div className="switcher-section">
-        <h3>Environments</h3>
-        <div className="fallback-message">
-          <div className="fallback-icon"><Folder size={32} /></div>
-          <h4>No Environments Available</h4>
-          <p>No environments are configured for the <strong>{currentProject.name}</strong> project.</p>
-          <p className="fallback-hint">Add more environments in Settings to enable switching.</p>
-        </div>
-      </div>
-    );
-  }
+  const EnvRow = ({ env, isCurrent }: { env: Environment; isCurrent: boolean }) => (
+    <button
+      className={`env-row${isCurrent ? ' active' : ''}`}
+      onClick={() => onSwitch(env)}
+      onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onSwitchNewTab(env); } }}
+      title={`${env.name} · ${env.baseUrl}${isCurrent ? ' (current)' : ''} · Middle-click: open in new tab`}
+    >
+      <span className="env-dot" style={{ backgroundColor: env.color }} />
+      <span className="env-row-name">{env.name}</span>
+      <span className="env-row-host">{getHostname(env.baseUrl)}</span>
+    </button>
+  );
 
   return (
-    <div className="switcher-section">
-      <h3>Environments</h3>
+    <div className="env-switcher">
+      <div className="env-search-row">
+        <Search size={13} className="env-search-icon" />
+        <input
+          className="env-search-input"
+          placeholder="Search environments…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={handleSearchKeyDown}
+          title="Enter: switch · Shift+Enter: open in new tab (when 1 result)"
+        />
+      </div>
 
-      <div className="project-environments-group">
-        <div className="project-header-switcher">
-          <h4
-            className="project-name"
-            style={{ color: currentProject.color || '#6b7280' }}
-          >
-            {currentProject.name}
-          </h4>
-          {currentProject.description && (
-            <span className="project-description">{currentProject.description}</span>
-          )}
-        </div>
-
-        <div className="environment-grid">
-          {currentProjectEnvironments.map(env => (
-            <button
-              key={env.id}
-              className={`env-button ${currentEnvironment?.id === env.id ? 'active' : ''}`}
-              style={{
-                '--env-color': env.color,
-                backgroundColor: currentEnvironment?.id === env.id ? env.color : 'transparent',
-                borderColor: env.color,
-                color: currentEnvironment?.id === env.id ? 'white' : env.color
-              } as React.CSSProperties}
-              onClick={() => onSwitch(env)}
-              onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onSwitchNewTab(env); } }}
-              title={`Switch to ${env.name} (${env.baseUrl}) · Middle-click to open in new tab`}
-            >
-              <div className="env-name">{env.name}</div>
-              <div className="env-url">{new URL(env.baseUrl).hostname}</div>
-            </button>
-          ))}
-        </div>
+      <div className="env-list">
+        {searchGroups ? (
+          searchGroups.size === 0 ? (
+            <p className="env-empty">No environments match</p>
+          ) : (
+            Array.from(searchGroups.entries()).map(([projectId, envs]) => {
+              const proj = projectMap.get(projectId);
+              return (
+                <div key={projectId} className="env-group">
+                  <div className="env-group-label" style={{ color: proj?.color || '#94a3b8' }}>
+                    {proj?.name || 'Unknown'}
+                  </div>
+                  {envs.map(env => (
+                    <EnvRow key={env.id} env={env} isCurrent={currentEnvironment?.id === env.id} />
+                  ))}
+                </div>
+              );
+            })
+          )
+        ) : (
+          <>
+            {recentEnvs.length > 0 && (
+              <div className="env-group">
+                <div className="env-group-label recent">RECENT</div>
+                {recentEnvs.map(env => (
+                  <EnvRow key={env.id} env={env} isCurrent={false} />
+                ))}
+              </div>
+            )}
+            {currentProjectEnvs.length > 0 ? (
+              <div className="env-group">
+                {currentProject && (
+                  <div className="env-group-label" style={{ color: currentProject.color || '#94a3b8' }}>
+                    {currentProject.name}
+                  </div>
+                )}
+                {currentProjectEnvs.map(env => (
+                  <EnvRow key={env.id} env={env} isCurrent={currentEnvironment?.id === env.id} />
+                ))}
+              </div>
+            ) : (
+              <p className="env-empty">
+                {currentEnvironment
+                  ? 'No environments in this project'
+                  : 'Not on a configured site'}
+              </p>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

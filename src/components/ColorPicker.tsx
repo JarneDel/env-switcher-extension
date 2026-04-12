@@ -5,9 +5,10 @@ interface ColorPickerProps {
   value: string;
   onChange: (color: string) => void;
   className?: string;
+  triggerClassName?: string;
 }
 
-const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, className = '' }) => {
+const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, className = '', triggerClassName }) => {
   const [isOpen, setIsOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
 
@@ -40,7 +41,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, className = 
     <div className={`custom-color-picker ${className}`} ref={pickerRef}>
       <button
         type="button"
-        className="color-preview"
+        className={triggerClassName || 'color-preview'}
         onClick={() => setIsOpen(!isOpen)}
         style={{ backgroundColor: value }}
         title="Select color"

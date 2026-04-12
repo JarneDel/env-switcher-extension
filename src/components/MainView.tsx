@@ -23,17 +23,28 @@ export default function MainView({
 }: MainViewProps) {
   const navigate = useNavigate();
 
+  const currentProject = currentTab?.currentEnvironment
+    ? config?.projects.find(p => p.id === currentTab.currentEnvironment!.projectId)
+    : undefined;
+
+  const title = currentProject?.name || 'Env Switcher';
+
   if (isConfigured) {
     return (
       <>
         <header className="app-header">
-          <h1>Environment Switcher</h1>
+          <h1 className="app-title">
+            {currentProject && (
+              <span className="header-dot" style={{ backgroundColor: currentProject.color || '#6b7280' }} />
+            )}
+            {title}
+          </h1>
           <button
             className="config-btn"
             onClick={() => navigate('/settings')}
             title="Configure environments"
           >
-            <Settings size={20} />
+            <Settings size={18} />
           </button>
         </header>
 
@@ -42,31 +53,17 @@ export default function MainView({
             environments={config?.environments || []}
             projects={config?.projects || []}
             currentEnvironment={currentTab?.currentEnvironment}
+            recentEnvironmentIds={config?.recentEnvironmentIds || []}
             onSwitch={onEnvironmentSwitch}
             onSwitchNewTab={onEnvironmentSwitchNewTab}
           />
-
-          {(currentTab?.availableLanguages?.length ?? 0) > 0 && (
-            <LanguageSwitcher
-              languages={currentTab?.availableLanguages}
-              currentLanguage={currentTab?.currentLanguage}
-              onSwitch={onLanguageSwitch}
-            />
-          )}
-
-          {currentTab && (
-            <div className="current-info">
-              <div className="current-url">
-                <strong>Current:</strong> {new URL(currentTab.url).hostname}
-              </div>
-              {currentTab.currentLanguage && (
-                <div className="current-language">
-                  <strong>Language:</strong> {currentTab.currentLanguage}
-                </div>
-              )}
-            </div>
-          )}
         </div>
+
+        <LanguageSwitcher
+          languages={currentTab?.availableLanguages}
+          currentLanguage={currentTab?.currentLanguage}
+          onSwitch={onLanguageSwitch}
+        />
       </>
     );
   }
@@ -74,13 +71,13 @@ export default function MainView({
   return (
     <>
       <header className="app-header">
-        <h1>Environment Switcher</h1>
+        <h1 className="app-title">Env Switcher</h1>
         <button
           className="config-btn"
           onClick={() => navigate('/settings')}
           title="Configure environments"
         >
-          <Settings size={20} />
+          <Settings size={18} />
         </button>
       </header>
       <div className="no-config">

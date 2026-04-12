@@ -1,10 +1,7 @@
 import browser from 'webextension-polyfill';
 import type { ExtensionConfig } from '../types';
-import type {LMStudioConfig} from './aiUtils';
 
-export interface StoredConfig extends ExtensionConfig {
-  aiConfig?: LMStudioConfig;
-}
+export type StoredConfig = ExtensionConfig;
 
 export class ExtensionStorage {
   private static isValidConfig(config: any): config is ExtensionConfig {
@@ -85,7 +82,6 @@ export const loadConfig = async (): Promise<StoredConfig> => {
     const result = await storage.get('extensionConfig');
     const config = result.extensionConfig as any;
 
-    // Default config structure
     const defaultStoredConfig: StoredConfig = {
       projects: [],
       environments: [],
@@ -95,18 +91,12 @@ export const loadConfig = async (): Promise<StoredConfig> => {
       borderHeight: 3,
       minimalBorderEnabled: false,
       minimalBorderHeight: 4,
-      aiConfig: {
-        enabled: false,
-        url: 'http://localhost:1234',
-        model: ''
-      }
     };
 
     if (!config || typeof config !== 'object') {
       return defaultStoredConfig;
     }
 
-    // Safely construct the config with fallbacks
     return {
       projects: Array.isArray(config.projects) ? config.projects : [],
       environments: Array.isArray(config.environments) ? config.environments : [],
@@ -117,7 +107,7 @@ export const loadConfig = async (): Promise<StoredConfig> => {
       minimalBorderEnabled: typeof config.minimalBorderEnabled === 'boolean' ? config.minimalBorderEnabled : false,
       minimalBorderHeight: typeof config.minimalBorderHeight === 'number' ? config.minimalBorderHeight : 4,
       currentEnvironment: config.currentEnvironment,
-      aiConfig: config.aiConfig || defaultStoredConfig.aiConfig
+      recentEnvironmentIds: Array.isArray(config.recentEnvironmentIds) ? config.recentEnvironmentIds : [],
     };
   } catch (error) {
     console.error('Failed to load config:', error);
@@ -125,11 +115,6 @@ export const loadConfig = async (): Promise<StoredConfig> => {
       projects: [],
       environments: [],
       autoDetectLanguages: true,
-      aiConfig: {
-        enabled: false,
-        url: 'http://localhost:1234',
-        model: ''
-      }
     };
   }
 };

@@ -109,6 +109,16 @@ function App() {
     }
   };
 
+  const MAX_RECENTS = 5;
+
+  const addToRecents = async (envId: string, currentConfig: ExtensionConfig) => {
+    const current = currentConfig.recentEnvironmentIds || [];
+    const updated = [envId, ...current.filter(id => id !== envId)].slice(0, MAX_RECENTS);
+    const newConfig = { ...currentConfig, recentEnvironmentIds: updated };
+    setConfig(newConfig);
+    await ExtensionStorage.saveConfig(newConfig);
+  };
+
   const handleEnvironmentSwitch = async (targetEnv: Environment) => {
     if (!currentTab) return;
 
@@ -126,6 +136,7 @@ function App() {
           await ExtensionStorage.setCurrentEnvironment(targetEnv.id);
         }
       }
+      if (config) await addToRecents(targetEnv.id, config);
     } catch (error) {
       console.error('Error switching environment:', error);
     }
@@ -144,6 +155,7 @@ function App() {
       if (typeof chrome !== 'undefined' && chrome.tabs) {
         await chrome.tabs.create({ url: newUrl });
       }
+      if (config) await addToRecents(targetEnv.id, config);
     } catch (error) {
       console.error('Error opening environment in new tab:', error);
     }

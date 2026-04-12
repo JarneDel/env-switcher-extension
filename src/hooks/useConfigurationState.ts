@@ -3,8 +3,6 @@ import type { Environment, ExtensionConfig, Project } from '../types';
 import { getRandomColor } from '../libs/colorUtils';
 import { validateProject, validateEnvironment, hasValidationErrors } from '../libs/validationUtils';
 import { getCurrentTabUrl, extractBaseDomain } from '../libs/urlUtils';
-import { generateEnvironmentName } from '../libs/aiUtils';
-import { loadConfig } from '../libs/storage';
 import browser from 'webextension-polyfill';
 
 export const useConfigurationState = (config: ExtensionConfig) => {
@@ -117,7 +115,7 @@ export const useConfigurationState = (config: ExtensionConfig) => {
     }, 100);
   };
 
-  const addCurrentDomain = async (projectId?: string, useAI: boolean = true) => {
+  const addCurrentDomain = async (projectId?: string) => {
     try {
       const currentUrl = await getCurrentTabUrl();
       const baseDomain = extractBaseDomain(currentUrl);
@@ -148,36 +146,13 @@ export const useConfigurationState = (config: ExtensionConfig) => {
         return;
       }
 
-      // Try to generate AI name, fallback to manual extraction
+      // Derive a simple name from the hostname
       let environmentName = 'New Environment';
-
-      if (useAI) {
-        try {
-          // Load AI config to check if AI naming is enabled
-          const storedConfig = await loadConfig();
-          const aiConfig = storedConfig.aiConfig;
-
-          if (aiConfig?.enabled && aiConfig.url && aiConfig.model) {
-            environmentName = await generateEnvironmentName(currentUrl, aiConfig);
-          } else {
-            // Fallback to manual extraction if AI is not configured
-            const urlObj = new URL(baseDomain);
-            const domainName = urlObj.hostname.replace('www.', '').split('.')[0];
-            environmentName = domainName.charAt(0).toUpperCase() + domainName.slice(1);
-          }
-        } catch (aiError) {
-          // AI naming failed, using fallback - silently handle
-          // Fallback to manual extraction
-          const urlObj = new URL(baseDomain);
-          const domainName = urlObj.hostname.replace('www.', '').split('.')[0];
-          environmentName = domainName.charAt(0).toUpperCase() + domainName.slice(1);
-        }
-      } else {
-        // Skip AI and go directly to manual extraction
+      try {
         const urlObj = new URL(baseDomain);
         const domainName = urlObj.hostname.replace('www.', '').split('.')[0];
         environmentName = domainName.charAt(0).toUpperCase() + domainName.slice(1);
-      }
+      } catch { /* keep default */ }
 
       const newEnv: Environment = {
         id: `env-${Date.now()}`,
