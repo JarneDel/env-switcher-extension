@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Search } from 'lucide-react';
+import { cn } from '../lib/utils';
 import type { Environment, Project } from '../types';
 
 interface Props {
@@ -86,23 +87,36 @@ const EnvironmentSwitcher: React.FC<Props> = ({
 
   const EnvRow = ({ env, isCurrent }: { env: Environment; isCurrent: boolean }) => (
     <button
-      className={`env-row${isCurrent ? ' active' : ''}`}
+      className={cn(
+        'flex items-center gap-2.5 px-4 py-2 w-full text-left border-none cursor-pointer transition-colors duration-[0.12s] text-sm',
+        isCurrent
+          ? 'bg-card text-card-foreground'
+          : 'bg-transparent text-slate-300 hover:bg-card hover:text-card-foreground'
+      )}
       onClick={() => onSwitch(env)}
       onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onSwitchNewTab(env); } }}
       title={`${env.name} · ${env.baseUrl}${isCurrent ? ' (current)' : ''} · Middle-click: open in new tab`}
     >
-      <span className="env-dot" style={{ backgroundColor: env.color }} />
-      <span className="env-row-name">{env.name}</span>
-      <span className="env-row-host">{getHostname(env.baseUrl)}</span>
+      <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: env.color }} />
+      <span className={cn('text-sm flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap', isCurrent && 'font-semibold')}>
+        {env.name}
+      </span>
+      <span className={cn(
+        'text-xs shrink-0 max-w-[130px] overflow-hidden text-ellipsis whitespace-nowrap',
+        isCurrent ? 'text-muted-foreground' : 'text-slate-500'
+      )}>
+        {getHostname(env.baseUrl)}
+      </span>
     </button>
   );
 
   return (
-    <div className="env-switcher">
-      <div className="env-search-row">
-        <Search size={13} className="env-search-icon" />
+    <div className="flex flex-col">
+      {/* search bar */}
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-card">
+        <Search size={13} className="text-slate-500 shrink-0" />
         <input
-          className="env-search-input"
+          className="bg-transparent border-none outline-none text-foreground text-sm w-full p-0 placeholder:text-slate-500"
           placeholder="Search environments…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -111,16 +125,20 @@ const EnvironmentSwitcher: React.FC<Props> = ({
         />
       </div>
 
-      <div className="env-list">
+      {/* list */}
+      <div className="flex flex-col overflow-y-auto max-h-[340px]">
         {searchGroups ? (
           searchGroups.size === 0 ? (
-            <p className="env-empty">No environments match</p>
+            <p className="text-slate-500 text-[0.8125rem] p-4 text-center">No environments match</p>
           ) : (
             Array.from(searchGroups.entries()).map(([projectId, envs]) => {
               const proj = projectMap.get(projectId);
               return (
-                <div key={projectId} className="env-group">
-                  <div className="env-group-label" style={{ color: proj?.color || '#94a3b8' }}>
+                <div key={projectId} className="flex flex-col">
+                  <div
+                    className="text-[0.6875rem] font-semibold tracking-[0.07em] uppercase px-4 pt-2 pb-1"
+                    style={{ color: proj?.color || '#94a3b8' }}
+                  >
                     {proj?.name || 'Unknown'}
                   </div>
                   {envs.map(env => (
@@ -133,17 +151,22 @@ const EnvironmentSwitcher: React.FC<Props> = ({
         ) : (
           <>
             {recentEnvs.length > 0 && (
-              <div className="env-group">
-                <div className="env-group-label recent">RECENT</div>
+              <div className="flex flex-col">
+                <div className="text-[0.6875rem] font-semibold tracking-[0.07em] uppercase text-slate-500 px-4 pt-2 pb-1">
+                  RECENT
+                </div>
                 {recentEnvs.map(env => (
                   <EnvRow key={env.id} env={env} isCurrent={false} />
                 ))}
               </div>
             )}
             {currentProjectEnvs.length > 0 ? (
-              <div className="env-group">
+              <div className="flex flex-col">
                 {currentProject && (
-                  <div className="env-group-label" style={{ color: currentProject.color || '#94a3b8' }}>
+                  <div
+                    className="text-[0.6875rem] font-semibold tracking-[0.07em] uppercase px-4 pt-2 pb-1"
+                    style={{ color: currentProject.color || '#94a3b8' }}
+                  >
                     {currentProject.name}
                   </div>
                 )}
@@ -152,7 +175,7 @@ const EnvironmentSwitcher: React.FC<Props> = ({
                 ))}
               </div>
             ) : (
-              <p className="env-empty">
+              <p className="text-slate-500 text-[0.8125rem] p-4 text-center">
                 {currentEnvironment
                   ? 'No environments in this project'
                   : 'Not on a configured site'}

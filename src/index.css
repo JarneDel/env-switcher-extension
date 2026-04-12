@@ -6,14 +6,6 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -52,59 +44,6 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
 
 @theme inline {
   --font-heading: var(--font-sans);
@@ -150,47 +89,124 @@ button:focus-visible {
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  /* Slate-based dark palette matching extension design */
+  --background: oklch(0.208 0.042 265.755);    /* slate-900 #0f172a */
+  --foreground: oklch(0.929 0.013 255.508);    /* slate-200 #e2e8f0 */
+  --card: oklch(0.279 0.041 260.031);          /* slate-800 #1e293b */
+  --card-foreground: oklch(0.968 0.007 247.896); /* slate-100 #f1f5f9 */
+  --popover: oklch(0.279 0.041 260.031);
+  --popover-foreground: oklch(0.968 0.007 247.896);
+  --primary: oklch(0.623 0.214 259.815);       /* blue-500 #3b82f6 */
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.279 0.041 260.031);     /* slate-800 */
+  --secondary-foreground: oklch(0.929 0.013 255.508);
+  --muted: oklch(0.279 0.041 260.031);         /* slate-800 */
+  --muted-foreground: oklch(0.704 0.04 256.788); /* slate-400 #94a3b8 */
+  --accent: oklch(0.372 0.044 257.287);        /* slate-700 #334155 */
+  --accent-foreground: oklch(0.929 0.013 255.508);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --border: oklch(0.372 0.044 257.287);        /* slate-700 #334155 */
+  --input: oklch(0.372 0.044 257.287);
+  --ring: oklch(0.623 0.214 259.815);          /* blue-500 */
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar: oklch(0.279 0.041 260.031);
+  --sidebar-foreground: oklch(0.929 0.013 255.508);
+  --sidebar-primary: oklch(0.623 0.214 259.815);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.372 0.044 257.287);
+  --sidebar-accent-foreground: oklch(0.929 0.013 255.508);
+  --sidebar-border: oklch(0.372 0.044 257.287);
+  --sidebar-ring: oklch(0.623 0.214 259.815);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
   html {
-    @apply font-sans;
+    @apply font-sans overflow-hidden;
   }
+  body {
+    @apply bg-background text-foreground m-0 min-h-[600px];
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-size: inherit;
+    line-height: inherit;
+    font-weight: inherit;
+    margin: 0;
+  }
+  button {
+    all: unset;
+    box-sizing: border-box;
+    cursor: pointer;
+  }
+  #root {
+    width: 460px;
+    min-height: 600px;
+  }
+}
+
+/* Collapse animation — managed by useCollapse hook */
+.collapse-wrapper {
+  --duration: 200ms;
+  overflow-y: hidden;
+  overflow-x: visible;
+  transition: max-height var(--duration) cubic-bezier(0.4, 0, 0.2, 1);
+}
+.collapse-wrapper.expanded {
+  max-height: 2000px;
+  opacity: 1;
+  overflow: visible;
+  transition:
+    max-height var(--duration) cubic-bezier(0.4, 0, 0.2, 1),
+    opacity calc(var(--duration) * 0.6) cubic-bezier(0.4, 0, 0.2, 1);
+}
+.collapse-wrapper.collapsed {
+  max-height: 0;
+  opacity: 0;
+  transition:
+    max-height var(--duration) cubic-bezier(0.4, 0, 0.2, 1),
+    opacity calc(var(--duration) * 0.3) cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Styled range input for height sliders */
+.range-slider {
+  flex: 1;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-accent);
+  outline: none;
+  cursor: pointer;
+}
+.range-slider::-webkit-slider-track {
+  background: var(--color-accent);
+  border-radius: 3px;
+  height: 6px;
+}
+.range-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.range-slider::-moz-range-track {
+  background: var(--color-accent);
+  border-radius: 3px;
+  height: 6px;
+  border: none;
+}
+.range-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
 }

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Plus } from 'lucide-react';
+import { Button } from './ui/button';
 import ProjectListItem from './ProjectListItem';
 import { useConfiguration } from '../context/ConfigurationContext';
 
@@ -22,27 +23,29 @@ const ProjectsList: React.FC = () => {
     : editingProjects;
 
   return (
-    <div className="projects-list-panel">
-      <div className="projects-list-toolbar">
-        <div className="projects-search-wrap">
-          <Search size={14} className="projects-search-icon" />
+    <div className="flex flex-col gap-0">
+      {/* toolbar */}
+      <div className="flex items-center gap-2 px-5 py-3 border-b border-border">
+        <div className="flex items-center gap-2 flex-1 min-w-0 relative">
+          <Search size={14} className="absolute left-2.5 text-muted-foreground shrink-0 pointer-events-none" />
           <input
-            className="projects-search-input"
+            className="w-full bg-card border border-border rounded-md pl-8 pr-3 h-8 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition-colors"
             placeholder="Search projects…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <button className="add-project-btn" onClick={addProject} title="Add project">
+        <Button size="sm" onClick={addProject} title="Add project" className="shrink-0">
           <Plus size={15} /> Add project
-        </button>
+        </Button>
       </div>
 
-      <div className="projects-list">
+      {/* list */}
+      <div className="flex flex-col gap-2 px-5 py-3">
         {filteredProjects.length === 0 && searchQuery ? (
-          <p className="projects-empty">No projects match "{searchQuery}"</p>
+          <p className="text-muted-foreground text-sm text-center py-4">No projects match "{searchQuery}"</p>
         ) : filteredProjects.length === 0 ? (
-          <p className="projects-empty">No projects yet. Add one above.</p>
+          <p className="text-muted-foreground text-sm text-center py-4">No projects yet. Add one above.</p>
         ) : (
           filteredProjects.map((project) => {
             const environments = getEnvironmentsByProject(project.id);

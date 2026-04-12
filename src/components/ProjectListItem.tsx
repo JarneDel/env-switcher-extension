@@ -1,8 +1,12 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, Trash2, Plus, Globe } from 'lucide-react';
+import { cn } from '../lib/utils';
 import type { Project, Environment } from '../types';
 import ColorPicker from './ColorPicker';
 import EnvironmentListItem from './EnvironmentListItem';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Badge } from './ui/badge';
 import { useConfiguration } from '../context/ConfigurationContext';
 import { useCollapse } from '../hooks/useCollapse';
 
@@ -57,35 +61,40 @@ const ProjectListItem: React.FC<Props> = ({
   const projectErrors = validateProject(project);
 
   return (
-    <div className={`project-list-item ${projectErrors.length > 0 ? 'has-errors' : ''}`}>
-      <div className="project-list-row">
-        <button
-          className="collapse-btn icon-btn"
+    <div className={cn(
+      'rounded-md border bg-card',
+      projectErrors.length > 0 ? 'border-destructive' : 'border-border'
+    )}>
+      {/* project header row */}
+      <div className="flex items-center gap-2 p-2">
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={() => setIsCollapsed(!isCollapsed)}
           title={isCollapsed ? 'Expand' : 'Collapse'}
+          className="shrink-0 text-muted-foreground"
         >
           {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-        </button>
+        </Button>
 
         <ColorPicker
           value={project.color || '#6b7280'}
           onChange={(color) => handleProjectChange(projectIndex, 'color', color)}
-          triggerClassName="color-dot-trigger"
         />
 
         {isEditingName ? (
-          <input
+          <Input
             ref={nameInputRef}
-            className="project-name-input"
             value={project.name}
             onChange={(e) => handleProjectChange(projectIndex, 'name', e.target.value)}
             onBlur={() => setIsEditingName(false)}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') setIsEditingName(false); }}
             placeholder="Project name"
+            className="h-7 flex-1 text-xs"
           />
         ) : (
           <span
-            className="project-list-name"
+            className="text-sm text-foreground flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap cursor-text"
             onDoubleClick={() => setIsEditingName(true)}
             title="Double-click to edit"
           >
@@ -93,25 +102,32 @@ const ProjectListItem: React.FC<Props> = ({
           </span>
         )}
 
-        <span className="env-count-badge">{environments.length}</span>
+        <Badge variant="secondary" className="shrink-0 tabular-nums">
+          {environments.length}
+        </Badge>
 
-        <button
-          className="remove-btn icon-btn"
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={() => removeProject(projectIndex)}
           title="Delete project"
+          className="shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
         >
           <Trash2 size={14} />
-        </button>
+        </Button>
       </div>
 
       {projectErrors.length > 0 && (
-        <div className="project-errors">
-          {projectErrors.map((err, i) => <span key={i} className="error-text">{err}</span>)}
+        <div className="flex flex-wrap gap-1 px-2 pb-1">
+          {projectErrors.map((err, i) => (
+            <span key={i} className="text-xs text-destructive">{err}</span>
+          ))}
         </div>
       )}
 
+      {/* collapsible environment list */}
       <div {...collapseProps}>
-        <div className="project-envs-list">
+        <div className="flex flex-col gap-1.5 px-2 pb-2">
           {environments.map((env) => (
             <EnvironmentListItem
               key={env.id}
@@ -119,19 +135,23 @@ const ProjectListItem: React.FC<Props> = ({
               errors={validateEnvironment(env)}
             />
           ))}
-          <div className="project-env-actions">
-            <button
-              className="add-env-btn"
+          <div className="flex gap-2 pt-1">
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => addEnvironment(project.id)}
+              className="flex-1 text-xs h-7"
             >
               <Plus size={12} /> Add new
-            </button>
-            <button
-              className="add-env-btn"
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => addCurrentDomain(project.id)}
+              className="flex-1 text-xs h-7"
             >
               <Globe size={12} /> Add current
-            </button>
+            </Button>
           </div>
         </div>
       </div>

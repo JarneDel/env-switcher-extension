@@ -6,7 +6,6 @@ import { URLUtils } from './libs/urlUtils';
 import MainView from './components/MainView';
 import SettingsView from './components/SettingsView';
 import SetupWelcome from './components/SetupWelcome';
-import './App.css';
 
 function App() {
   const [config, setConfig] = useState<ExtensionConfig | null>(null);
@@ -186,15 +185,15 @@ function App() {
 
   if (loading) {
     return (
-      <div className="app loading">
-        <div className="spinner"></div>
-        <p>Loading...</p>
+      <div className="flex flex-col items-center justify-center h-dvh bg-background text-foreground gap-4">
+        <div className="size-6 rounded-full border-2 border-muted border-t-primary animate-spin" />
+        <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="app">
+    <div className="flex flex-col h-dvh bg-background text-foreground">
       <Routes>
         <Route
           path="/setup"

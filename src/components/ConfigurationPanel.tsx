@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from './ui/button';
 import type { ExtensionConfig } from '../types';
 import ProjectsList from './ProjectsList';
 import { ConfigurationProvider, useConfiguration } from '../context/ConfigurationContext';
@@ -25,7 +26,6 @@ const ConfigurationPanelContent: React.FC<Omit<Props, 'config'>> = ({
 
   const isInitialMount = React.useRef(true);
 
-  // Auto-save whenever projects or environments change, debounced
   React.useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -39,16 +39,20 @@ const ConfigurationPanelContent: React.FC<Omit<Props, 'config'>> = ({
   }, [editingProjects, editingEnvironments]);
 
   return (
-    <div className={`config-panel ${standalone ? 'standalone' : ''}`} ref={configurationPanel}>
-      {!standalone && <h3>Configure Projects & Environments</h3>}
+    <div ref={configurationPanel}>
+      {!standalone && (
+        <h3 className="text-sm font-semibold text-foreground px-5 py-3 border-b border-border">
+          Configure Projects & Environments
+        </h3>
+      )}
 
       <ProjectsList />
 
       {!standalone && onCancel && (
-        <div className="config-actions">
-          <button onClick={onCancel} className="cancel-btn">
+        <div className="flex gap-2 px-5 py-3 border-t border-border">
+          <Button variant="outline" onClick={onCancel} className="flex-1">
             Cancel
-          </button>
+          </Button>
         </div>
       )}
     </div>

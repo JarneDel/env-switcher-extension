@@ -9,10 +9,10 @@ const ValidationErrors: React.FC<Props> = ({ errors }) => {
   if (errors.length === 0) return null;
 
   return (
-    <div className="validation-errors">
+    <div className="mt-2 space-y-1">
       {errors.map((error, i) => (
-        <div key={i} className="error-message">
-          <AlertTriangle size={12} style={{ display: 'inline', marginRight: '0.5rem' }} />
+        <div key={i} className="flex items-center gap-1.5 text-xs text-destructive">
+          <AlertTriangle size={12} className="shrink-0" />
           {error}
         </div>
       ))}

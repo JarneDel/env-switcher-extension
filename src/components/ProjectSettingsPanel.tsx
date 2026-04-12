@@ -15,8 +15,8 @@ const ProjectSettingsPanel: React.FC = () => {
     try {
       const currentConfig = await loadConfig();
       setConfig(currentConfig);
-    } catch (error) {
-      // Error loading config - silently handle
+    } catch {
+      // silently handle
     } finally {
       setLoading(false);
     }
@@ -27,36 +27,34 @@ const ProjectSettingsPanel: React.FC = () => {
     try {
       await saveConfig(newConfig);
       setConfig(newConfig);
-    } catch (error) {
+    } catch {
       // silently handle
     }
   };
 
   if (loading) {
     return (
-      <div className="settings-loading">
-        <div className="spinner"></div>
-        <p>Loading project settings...</p>
+      <div className="flex flex-col items-center justify-center p-8 gap-4">
+        <div className="size-5 rounded-full border-2 border-muted border-t-primary animate-spin" />
+        <p className="text-sm text-muted-foreground">Loading project settings...</p>
       </div>
     );
   }
 
   if (!config) {
     return (
-      <div className="settings-error">
-        <p>Failed to load project settings</p>
+      <div className="flex flex-col items-center justify-center p-8 gap-4">
+        <p className="text-sm text-muted-foreground">Failed to load project settings</p>
       </div>
     );
   }
 
   return (
-    <div className="settings-section">
-      <ConfigurationPanel
-        config={config}
-        onSave={handleConfigSave}
-        standalone
-      />
-    </div>
+    <ConfigurationPanel
+      config={config}
+      onSave={handleConfigSave}
+      standalone
+    />
   );
 };
 
