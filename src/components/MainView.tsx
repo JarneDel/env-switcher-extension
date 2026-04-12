@@ -9,6 +9,7 @@ interface MainViewProps {
   currentTab: TabInfo | null;
   isConfigured: boolean;
   onEnvironmentSwitch: (env: Environment) => void;
+  onEnvironmentSwitchNewTab: (env: Environment) => void;
   onLanguageSwitch: (lang: LanguageOption) => void;
 }
 
@@ -17,6 +18,7 @@ export default function MainView({
   currentTab,
   isConfigured,
   onEnvironmentSwitch,
+  onEnvironmentSwitchNewTab,
   onLanguageSwitch
 }: MainViewProps) {
   const navigate = useNavigate();
@@ -41,6 +43,7 @@ export default function MainView({
             projects={config?.projects || []}
             currentEnvironment={currentTab?.currentEnvironment}
             onSwitch={onEnvironmentSwitch}
+            onSwitchNewTab={onEnvironmentSwitchNewTab}
           />
 
           {(currentTab?.availableLanguages?.length ?? 0) > 0 && (

@@ -7,13 +7,15 @@ interface Props {
   projects: Project[];
   currentEnvironment?: Environment;
   onSwitch: (env: Environment) => void;
+  onSwitchNewTab: (env: Environment) => void;
 }
 
 const EnvironmentSwitcher: React.FC<Props> = ({ 
   environments, 
   projects,
   currentEnvironment,
-  onSwitch
+  onSwitch,
+  onSwitchNewTab
 }) => {
   // If no environments are configured at all, don't show anything
   if (environments.length === 0) {
@@ -98,7 +100,8 @@ const EnvironmentSwitcher: React.FC<Props> = ({
                 color: currentEnvironment?.id === env.id ? 'white' : env.color
               } as React.CSSProperties}
               onClick={() => onSwitch(env)}
-              title={`Switch to ${env.name} (${env.baseUrl})`}
+              onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onSwitchNewTab(env); } }}
+              title={`Switch to ${env.name} (${env.baseUrl}) · Middle-click to open in new tab`}
             >
               <div className="env-name">{env.name}</div>
               <div className="env-url">{new URL(env.baseUrl).hostname}</div>

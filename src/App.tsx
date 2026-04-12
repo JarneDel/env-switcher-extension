@@ -121,6 +121,24 @@ function App() {
     }
   };
 
+  const handleEnvironmentSwitchNewTab = async (targetEnv: Environment) => {
+    if (!currentTab) return;
+
+    try {
+      const newUrl = URLUtils.switchEnvironment(
+        currentTab.url,
+        targetEnv,
+        currentTab.currentEnvironment
+      );
+
+      if (typeof chrome !== 'undefined' && chrome.tabs) {
+        await chrome.tabs.create({ url: newUrl });
+      }
+    } catch (error) {
+      console.error('Error opening environment in new tab:', error);
+    }
+  };
+
   const handleLanguageSwitch = async (language: LanguageOption) => {
     if (!currentTab) return;
 
@@ -188,6 +206,7 @@ function App() {
               currentTab={currentTab}
               isConfigured={isConfigured}
               onEnvironmentSwitch={handleEnvironmentSwitch}
+              onEnvironmentSwitchNewTab={handleEnvironmentSwitchNewTab}
               onLanguageSwitch={handleLanguageSwitch}
             />
           }

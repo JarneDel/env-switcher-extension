@@ -20,12 +20,12 @@
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*"],
-      "js": ["content-script.js"],
+      "js": ["src/content-script.ts"],
       "run_at": "document_end"
     }
   ],
   "background": {
-    "scripts": ["background.js"],
+    "scripts": ["src/background.ts"],
     "type": "module"
   },
   "icons": {

@@ -1,61 +1,42 @@
 import {defineConfig} from 'vite';
 import react from '@vitejs/plugin-react';
-import {viteStaticCopy} from 'vite-plugin-static-copy';
-import hotReloadExtension from 'hot-reload-extension-vite';
-import {resolve} from 'path';
+import webExtension from 'vite-plugin-web-extension';
 
 const targetBrowser = process.env.TARGET_BROWSER || 'chrome';
 
-export default defineConfig({
-    plugins: [
-        react(),
+export default defineConfig(({mode}) => {
+    const isDev = mode === 'development';
 
-        // Hot reload plugin for extension development
-        hotReloadExtension({
-            log: true,
-            backgroundPath: 'src/background.ts',
-        }),
+    return {
+        plugins: [
+            react(),
+            webExtension({
+                manifest: targetBrowser === 'firefox'
+                    ? 'manifest-firefox.json'
+                    : 'manifest.json',
+                browser: targetBrowser as 'chrome' | 'firefox',
+                // Disable auto-launching the browser (load the dist folder manually)
+                disableAutoLaunch: true,
+                watchFilePaths: ['src/**'],
+            }),
+        ],
 
-        viteStaticCopy({
-            targets: [
-                {
-                    src: targetBrowser === 'firefox' ? 'manifest-firefox.json' : 'manifest.json',
-                    dest: '.',
-                    rename: 'manifest.json'
+        build: {
+            outDir: targetBrowser === 'firefox' ? 'dist-firefox' : 'dist-chrome',
+            emptyOutDir: true,
+            sourcemap: isDev,
+            // Use terser in production to strip console/debugger calls
+            minify: isDev ? false : 'terser',
+            terserOptions: isDev ? undefined : {
+                compress: {
+                    drop_console: true,
+                    drop_debugger: true,
                 },
-                {src: 'public/*', dest: 'public'}
-            ]
-        })
-    ],
-    esbuild: {
-        drop: ['console', 'debugger'],
-    },
-    build: {
-        outDir: targetBrowser === 'firefox' ? 'dist-firefox' : 'dist-chrome',
-        emptyOutDir: true,
-        sourcemap: false,
-        minify: true,
-
-        rollupOptions: {
-            input: {
-                popup: resolve(__dirname, 'index.html'),
-                background: resolve(__dirname, 'src/background.ts'),
-                'content-script': resolve(__dirname, 'src/content-script.ts')
             },
-            output: {
-                entryFileNames: (chunkInfo) => {
-                    if (chunkInfo.name === 'background' || chunkInfo.name === 'content-script') {
-                        return '[name].js';
-                    }
-                    return 'assets/[name]-[hash].js';
-                },
-                chunkFileNames: 'assets/[name]-[hash].js',
-                assetFileNames: 'assets/[name]-[hash].[ext]'
-            }
-        }
-    },
+        },
 
-    define: {
-        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
-    }
+        define: {
+            'process.env.NODE_ENV': JSON.stringify(mode || 'development'),
+        },
+    };
 });
