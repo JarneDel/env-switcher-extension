@@ -1,24 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { loadConfig, saveConfig, type StoredConfig } from '../libs/storage';
 
-interface Props {
-  onSettingsChange: () => void;
-  onSaveReady?: (saveHandler: () => void, hasErrors: () => boolean) => void;
-}
-
-const DisplaySettingsPanel: React.FC<Props> = ({ onSettingsChange, onSaveReady }) => {
+const DisplaySettingsPanel: React.FC = () => {
   const [config, setConfig] = useState<StoredConfig | null>(null);
   const [loading, setLoading] = useState(true);
+  const isFirstLoad = useRef(true);
 
   useEffect(() => {
     loadStoredConfig();
   }, []);
 
+  // Auto-save whenever config changes
   useEffect(() => {
-    if (onSaveReady && config) {
-      onSaveReady(handleSave, () => false); // No validation errors for display settings
+    if (!config) return;
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
+      return;
     }
-  }, [onSaveReady, config]);
+    const timer = setTimeout(async () => {
+      await saveConfig(config);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [config]);
 
   const loadStoredConfig = async () => {
     try {
@@ -28,17 +31,6 @@ const DisplaySettingsPanel: React.FC<Props> = ({ onSettingsChange, onSaveReady }
       // Error loading config - silently handle
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    if (!config) return;
-
-    try {
-      await saveConfig(config);
-      onSettingsChange();
-    } catch (error) {
-      // Error saving config - silently handle
     }
   };
 

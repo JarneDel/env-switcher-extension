@@ -1,32 +1,20 @@
 import { useNavigate, Routes, Route, useLocation } from 'react-router-dom';
-import { Save, Bot, Eye, FolderOpen } from 'lucide-react';
+import { Bot, Eye, FolderOpen } from 'lucide-react';
 import ProjectSettingsPanel from './ProjectSettingsPanel';
 import AISettingsPanel from './AISettingsPanel';
 import DisplaySettingsPanel from './DisplaySettingsPanel';
 
 interface SettingsViewProps {
   isConfigured: boolean;
-  saveHandler: (() => void) | null;
-  hasErrors: (() => boolean) | null;
   onSettingsChange: () => void;
-  onSaveReady: (saveHandlerFn: () => void, hasErrorsFn: () => boolean) => void;
 }
 
 export default function SettingsView({
   isConfigured,
-  saveHandler,
-  hasErrors,
-  onSettingsChange,
-  onSaveReady
+  onSettingsChange
 }: SettingsViewProps) {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const handleSaveClick = () => {
-    if (saveHandler) {
-      saveHandler();
-    }
-  };
 
   const isProjectsTab = location.pathname === '/settings' || location.pathname === '/settings/projects';
   const isAITab = location.pathname === '/settings/ai';
@@ -37,19 +25,9 @@ export default function SettingsView({
       <header className="app-header">
         <h1>Settings</h1>
         <div className="header-actions">
-          {saveHandler && (
-            <button
-              className="save-btn"
-              onClick={handleSaveClick}
-              disabled={hasErrors ? hasErrors() : false}
-              title="Save changes"
-            >
-              <Save size={16} />
-            </button>
-          )}
           <button
             className="back-btn"
-            onClick={() => navigate(isConfigured ? '/' : '/setup')}
+            onClick={() => { onSettingsChange(); navigate(isConfigured ? '/' : '/setup'); }}
             title="Go back"
           >
             ←
@@ -87,39 +65,19 @@ export default function SettingsView({
         <Routes>
           <Route
             path="/"
-            element={
-              <ProjectSettingsPanel
-                onSettingsChange={onSettingsChange}
-                onSaveReady={onSaveReady}
-              />
-            }
+            element={<ProjectSettingsPanel />}
           />
           <Route
             path="/projects"
-            element={
-              <ProjectSettingsPanel
-                onSettingsChange={onSettingsChange}
-                onSaveReady={onSaveReady}
-              />
-            }
+            element={<ProjectSettingsPanel />}
           />
           <Route
             path="/ai"
-            element={
-              <AISettingsPanel
-                onSettingsChange={onSettingsChange}
-                onSaveReady={onSaveReady}
-              />
-            }
+            element={<AISettingsPanel />}
           />
           <Route
             path="/display"
-            element={
-              <DisplaySettingsPanel
-                onSettingsChange={onSettingsChange}
-                onSaveReady={onSaveReady}
-              />
-            }
+            element={<DisplaySettingsPanel />}
           />
         </Routes>
       </div>

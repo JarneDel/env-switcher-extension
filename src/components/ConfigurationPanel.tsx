@@ -8,32 +8,35 @@ interface Props {
   onSave: (config: ExtensionConfig) => void;
   onCancel?: () => void;
   standalone?: boolean;
-  onSaveReady?: (saveHandler: () => void, hasErrors: () => boolean) => void;
 }
 
 const ConfigurationPanelContent: React.FC<Omit<Props, 'config'>> = ({
   onSave,
   onCancel,
-  standalone = false,
-  onSaveReady
+  standalone = false
 }) => {
   const {
     configurationPanel,
     hasValidationErrors,
-    buildUpdatedConfig
+    buildUpdatedConfig,
+    editingProjects,
+    editingEnvironments
   } = useConfiguration();
 
-  const handleSave = () => {
-    const updatedConfig = buildUpdatedConfig();
-    onSave(updatedConfig);
-  };
+  const isInitialMount = React.useRef(true);
 
-  // Expose save handler to parent component
+  // Auto-save whenever projects or environments change, debounced
   React.useEffect(() => {
-    if (onSaveReady) {
-      onSaveReady(handleSave, hasValidationErrors);
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
     }
-  }, [onSaveReady, hasValidationErrors]);
+    if (hasValidationErrors()) return;
+    const timer = setTimeout(() => {
+      onSave(buildUpdatedConfig());
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [editingProjects, editingEnvironments]);
 
   return (
     <div className={`config-panel ${standalone ? 'standalone' : ''}`} ref={configurationPanel}>

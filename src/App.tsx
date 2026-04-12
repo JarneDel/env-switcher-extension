@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import type {Environment, TabInfo, ExtensionConfig, LanguageOption} from './types';
 import { ExtensionStorage } from './libs/storage';
@@ -13,11 +13,10 @@ function App() {
   const [currentTab, setCurrentTab] = useState<TabInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [isConfigured, setIsConfigured] = useState(false);
-  const [saveHandler, setSaveHandler] = useState<(() => void) | null>(null);
-  const [hasErrors, setHasErrors] = useState<(() => boolean) | null>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
     loadInitialData();
@@ -36,6 +35,17 @@ function App() {
       };
     }
   }, []);
+
+  // Reload data when navigating back to main view so auto-saved changes are reflected
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    if (location.pathname === '/') {
+      loadInitialData();
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     // Navigate to setup if not configured and not already on setup/settings
@@ -154,18 +164,12 @@ function App() {
     }
   };
 
-  const handleSettingsChange = async () => {
-    await loadInitialData();
+  const handleSettingsChange = () => {
     navigate('/');
   };
 
   const handleStartSetup = () => {
     navigate('/settings');
-  };
-
-  const handleSaveReady = (saveHandlerFn: () => void, hasErrorsFn: () => boolean) => {
-    setSaveHandler(() => saveHandlerFn);
-    setHasErrors(() => hasErrorsFn);
   };
 
   if (loading) {
@@ -190,10 +194,7 @@ function App() {
           element={
             <SettingsView
               isConfigured={isConfigured}
-              saveHandler={saveHandler}
-              hasErrors={hasErrors}
               onSettingsChange={handleSettingsChange}
-              onSaveReady={handleSaveReady}
             />
           }
         />

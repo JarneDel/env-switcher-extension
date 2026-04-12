@@ -1,6 +1,8 @@
 import {defineConfig} from 'vite';
 import react from '@vitejs/plugin-react';
 import webExtension from 'vite-plugin-web-extension';
+import tailwindcss from '@tailwindcss/vite';
+import path from 'path';
 
 const targetBrowser = process.env.TARGET_BROWSER || 'chrome';
 
@@ -8,7 +10,13 @@ export default defineConfig(({mode}) => {
     const isDev = mode === 'development';
 
     return {
+        resolve: {
+            alias: {
+                '@': path.resolve(__dirname, './src'),
+            },
+        },
         plugins: [
+            tailwindcss(),
             react(),
             webExtension({
                 manifest: targetBrowser === 'firefox'

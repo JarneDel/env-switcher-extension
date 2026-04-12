@@ -3,12 +3,7 @@ import type { ExtensionConfig } from '../types';
 import { loadConfig, saveConfig, type StoredConfig } from '../libs/storage';
 import ConfigurationPanel from './ConfigurationPanel';
 
-interface Props {
-  onSettingsChange: () => void;
-  onSaveReady?: (saveHandler: () => void, hasErrors: () => boolean) => void;
-}
-
-const ProjectSettingsPanel: React.FC<Props> = ({ onSettingsChange, onSaveReady }) => {
+const ProjectSettingsPanel: React.FC = () => {
   const [config, setConfig] = useState<StoredConfig | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -43,12 +38,6 @@ const ProjectSettingsPanel: React.FC<Props> = ({ onSettingsChange, onSaveReady }
     }
   };
 
-  const handleSaveReady = (saveHandlerFn: () => void, hasErrorsFn: () => boolean) => {
-    if (onSaveReady) {
-      onSaveReady(saveHandlerFn, hasErrorsFn);
-    }
-  };
-
   if (loading) {
     return (
       <div className="settings-loading">
@@ -71,7 +60,6 @@ const ProjectSettingsPanel: React.FC<Props> = ({ onSettingsChange, onSaveReady }
       <ConfigurationPanel
         config={config}
         onSave={handleConfigSave}
-        onSaveReady={handleSaveReady}
         standalone
       />
     </div>
