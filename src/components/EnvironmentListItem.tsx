@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Trash2 } from 'lucide-react';
-import { cn } from '../lib/utils';
-import type { Environment } from '../types';
+import { cn, capitalize } from '../lib/utils';
+import type { Environment } from '@/types';
 import ColorPicker from './ColorPicker';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -65,7 +65,7 @@ const EnvironmentListItem: React.FC<Props> = ({ environment, errors }) => {
             onDoubleClick={() => setIsEditingName(true)}
             title="Double-click to edit name"
           >
-            {environment.name || 'Unnamed'}
+            {capitalize(environment.name) || 'Unnamed'}
           </span>
         )}
 

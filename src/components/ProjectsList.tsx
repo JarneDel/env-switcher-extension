@@ -26,10 +26,10 @@ const ProjectsList: React.FC = () => {
     <div className="flex flex-col gap-0">
       {/* toolbar */}
       <div className="flex items-center gap-2 px-5 py-3 border-b border-border">
-        <div className="flex items-center gap-2 flex-1 min-w-0 relative">
-          <Search size={14} className="absolute left-2.5 text-muted-foreground shrink-0 pointer-events-none" />
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <Search size={13} className="text-slate-500 shrink-0" />
           <input
-            className="w-full bg-card border border-border rounded-md pl-8 pr-3 h-8 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition-colors"
+            className="bg-transparent border-none outline-none text-foreground text-sm w-full p-0 placeholder:text-slate-500"
             placeholder="Search projects…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -41,7 +41,7 @@ const ProjectsList: React.FC = () => {
       </div>
 
       {/* list */}
-      <div className="flex flex-col gap-2 px-5 py-3">
+      <div className="flex flex-col gap-5 px-2 py-4">
         {filteredProjects.length === 0 && searchQuery ? (
           <p className="text-muted-foreground text-sm text-center py-4">No projects match "{searchQuery}"</p>
         ) : filteredProjects.length === 0 ? (

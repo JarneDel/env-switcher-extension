@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Search } from 'lucide-react';
-import { cn } from '../lib/utils';
-import type { Environment, Project } from '../types';
+import { cn, capitalize } from '../lib/utils';
+import type { Environment, Project } from '@/types';
 
 interface Props {
   environments: Environment[];
@@ -10,6 +10,7 @@ interface Props {
   recentEnvironmentIds: string[];
   onSwitch: (env: Environment) => void;
   onSwitchNewTab: (env: Environment) => void;
+  focusSearchTrigger?: number;
 }
 
 function fuzzyMatch(needle: string, haystack: string): boolean {
@@ -33,8 +34,14 @@ const EnvironmentSwitcher: React.FC<Props> = ({
   recentEnvironmentIds,
   onSwitch,
   onSwitchNewTab,
+  focusSearchTrigger,
 }) => {
   const [search, setSearch] = useState('');
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (focusSearchTrigger) searchRef.current?.focus();
+  }, [focusSearchTrigger]);
 
   const projectMap = useMemo(() => new Map(projects.map(p => [p.id, p])), [projects]);
 
@@ -73,6 +80,12 @@ const EnvironmentSwitcher: React.FC<Props> = ({
   }, [searchGroups]);
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (search) setSearch('');
+      else (e.target as HTMLInputElement).blur();
+      return;
+    }
     if (e.key !== 'Enter' || allMatchedEnvs.length !== 1) return;
     e.preventDefault();
     if (e.shiftKey) {
@@ -95,14 +108,14 @@ const EnvironmentSwitcher: React.FC<Props> = ({
       )}
       onClick={() => onSwitch(env)}
       onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onSwitchNewTab(env); } }}
-      title={`${env.name} · ${env.baseUrl}${isCurrent ? ' (current)' : ''} · Middle-click: open in new tab`}
+      title={`${capitalize(env.name)} · ${env.baseUrl}${isCurrent ? ' (current)' : ''} · Middle-click: open in new tab`}
     >
       <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: env.color }} />
       <span className={cn('text-sm flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap', isCurrent && 'font-semibold')}>
-        {env.name}
+        {capitalize(env.name)}
       </span>
       <span className={cn(
-        'text-xs shrink-0 max-w-[130px] overflow-hidden text-ellipsis whitespace-nowrap',
+        'text-xs shrink-0 max-w-32.5 overflow-hidden text-ellipsis whitespace-nowrap',
         isCurrent ? 'text-muted-foreground' : 'text-slate-500'
       )}>
         {getHostname(env.baseUrl)}
@@ -111,11 +124,12 @@ const EnvironmentSwitcher: React.FC<Props> = ({
   );
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full">
       {/* search bar */}
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-card">
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-card shrink-0">
         <Search size={13} className="text-slate-500 shrink-0" />
         <input
+          ref={searchRef}
           className="bg-transparent border-none outline-none text-foreground text-sm w-full p-0 placeholder:text-slate-500"
           placeholder="Search environments…"
           value={search}
@@ -126,7 +140,7 @@ const EnvironmentSwitcher: React.FC<Props> = ({
       </div>
 
       {/* list */}
-      <div className="flex flex-col overflow-y-auto max-h-[340px]">
+      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
         {searchGroups ? (
           searchGroups.size === 0 ? (
             <p className="text-slate-500 text-[0.8125rem] p-4 text-center">No environments match</p>
@@ -139,7 +153,7 @@ const EnvironmentSwitcher: React.FC<Props> = ({
                     className="text-[0.6875rem] font-semibold tracking-[0.07em] uppercase px-4 pt-2 pb-1"
                     style={{ color: proj?.color || '#94a3b8' }}
                   >
-                    {proj?.name || 'Unknown'}
+                    {capitalize(proj?.name || 'Unknown')}
                   </div>
                   {envs.map(env => (
                     <EnvRow key={env.id} env={env} isCurrent={currentEnvironment?.id === env.id} />
@@ -167,7 +181,7 @@ const EnvironmentSwitcher: React.FC<Props> = ({
                     className="text-[0.6875rem] font-semibold tracking-[0.07em] uppercase px-4 pt-2 pb-1"
                     style={{ color: currentProject.color || '#94a3b8' }}
                   >
-                    {currentProject.name}
+                    {capitalize(currentProject.name)}
                   </div>
                 )}
                 {currentProjectEnvs.map(env => (

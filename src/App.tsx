@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import type {Environment, TabInfo, ExtensionConfig, LanguageOption} from './types';
+import type {Environment, TabInfo, ExtensionConfig, LanguageOption, VisitedPage, FavoritePage} from './types';
 import { ExtensionStorage } from './libs/storage';
 import { URLUtils } from './libs/urlUtils';
 import MainView from './components/MainView';
@@ -12,6 +12,8 @@ function App() {
   const [currentTab, setCurrentTab] = useState<TabInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [isConfigured, setIsConfigured] = useState(false);
+
+  const [visitedPages, setVisitedPages] = useState<VisitedPage[]>([]);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -89,6 +91,49 @@ function App() {
     }
   };
 
+  const MAX_VISITED = 50;
+
+  const loadHistoryPages = async (cfg: ExtensionConfig, projectId: string): Promise<VisitedPage[]> => {
+    if (typeof chrome === 'undefined' || !chrome.history) return [];
+    const projectEnvs = cfg.environments.filter(e => e.projectId === projectId);
+    if (projectEnvs.length === 0) return [];
+
+    try {
+      const seen = new Set<string>();
+      const allItems: VisitedPage[] = [];
+
+      for (const env of projectEnvs) {
+        const results = await chrome.history.search({ text: env.baseUrl, maxResults: 200, startTime: 0 });
+        for (const item of results) {
+          if (!item.url || !item.url.startsWith(env.baseUrl)) continue;
+          try {
+            const urlObj = new URL(item.url);
+            const key = urlObj.hostname + urlObj.pathname;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            allItems.push({
+              key,
+              url: item.url,
+              title: item.title || urlObj.pathname,
+              projectId,
+              language: URLUtils.extractLanguageFromUrl(item.url),
+              visitCount: item.visitCount || 1,
+              lastVisited: item.lastVisitTime || Date.now(),
+            });
+          } catch {
+            // skip invalid URLs
+          }
+        }
+      }
+
+      return allItems
+        .sort((a, b) => b.visitCount - a.visitCount || b.lastVisited - a.lastVisited)
+        .slice(0, MAX_VISITED);
+    } catch {
+      return [];
+    }
+  };
+
   const loadInitialData = async () => {
     try {
       const extensionConfig = await ExtensionStorage.getConfig();
@@ -100,6 +145,11 @@ function App() {
       if (configured) {
         const tabInfo = await getCurrentTabInfo(extensionConfig);
         setCurrentTab(tabInfo);
+
+        if (tabInfo?.currentEnvironment) {
+          const pages = await loadHistoryPages(extensionConfig, tabInfo.currentEnvironment.projectId);
+          setVisitedPages(pages);
+        }
       }
     } catch (error) {
       console.error('Error loading initial data:', error);
@@ -116,6 +166,47 @@ function App() {
     const newConfig = { ...currentConfig, recentEnvironmentIds: updated };
     setConfig(newConfig);
     await ExtensionStorage.saveConfig(newConfig);
+  };
+
+  const handleToggleFavoritePage = async (page: VisitedPage) => {
+    if (!config) return;
+    let pathname: string;
+    try { pathname = new URL(page.url).pathname; } catch { return; }
+    const favorites = config.favorites || [];
+    const exists = favorites.some(f => f.key === pathname);
+    const updated: FavoritePage[] = exists
+      ? favorites.filter(f => f.key !== pathname)
+      : [...favorites, { key: pathname, url: page.url, title: page.title, projectId: page.projectId, language: page.language, addedAt: Date.now() }];
+    const newConfig = { ...config, favorites: updated };
+    setConfig(newConfig);
+    await ExtensionStorage.saveConfig(newConfig);
+  };
+
+  const handleRemoveFavorite = async (key: string) => {
+    if (!config) return;
+    const favorites = (config.favorites || []).filter(f => f.key !== key);
+    const newConfig = { ...config, favorites };
+    setConfig(newConfig);
+    await ExtensionStorage.saveConfig(newConfig);
+  };
+
+  const handleFavoriteCurrentPage = async () => {
+    if (!currentTab?.url || !currentTab?.currentEnvironment) return;
+    try {
+      const u = new URL(currentTab.url);
+      const pathname = u.pathname;
+      const existing = visitedPages.find(p => { try { return new URL(p.url).pathname === pathname; } catch { return false; } });
+      const page: VisitedPage = {
+        key: u.hostname + u.pathname,
+        url: currentTab.url,
+        title: existing?.title || u.pathname,
+        projectId: currentTab.currentEnvironment.projectId,
+        language: existing?.language ?? URLUtils.extractLanguageFromUrl(currentTab.url),
+        visitCount: existing?.visitCount || 1,
+        lastVisited: existing?.lastVisited || Date.now(),
+      };
+      await handleToggleFavoritePage(page);
+    } catch { /* skip invalid URLs */ }
   };
 
   const handleEnvironmentSwitch = async (targetEnv: Environment) => {
@@ -175,6 +266,29 @@ function App() {
     }
   };
 
+  const handlePageNavigate = async (url: string) => {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.tabs) {
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tabs[0] && typeof tabs[0].id === 'number') {
+          await chrome.tabs.update(tabs[0].id, { url });
+        }
+      }
+    } catch (error) {
+      console.error('Error navigating to page:', error);
+    }
+  };
+
+  const handlePageNavigateNewTab = async (url: string) => {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.tabs) {
+        await chrome.tabs.create({ url });
+      }
+    } catch (error) {
+      console.error('Error opening page in new tab:', error);
+    }
+  };
+
   const handleSettingsChange = () => {
     navigate('/');
   };
@@ -217,9 +331,16 @@ function App() {
               config={config}
               currentTab={currentTab}
               isConfigured={isConfigured}
+              visitedPages={visitedPages}
+              favorites={config?.favorites || []}
               onEnvironmentSwitch={handleEnvironmentSwitch}
               onEnvironmentSwitchNewTab={handleEnvironmentSwitchNewTab}
               onLanguageSwitch={handleLanguageSwitch}
+              onPageNavigate={handlePageNavigate}
+              onPageNavigateNewTab={handlePageNavigateNewTab}
+              onToggleFavoritePage={handleToggleFavoritePage}
+              onFavoriteCurrentPage={handleFavoriteCurrentPage}
+              onRemoveFavorite={handleRemoveFavorite}
             />
           }
         />

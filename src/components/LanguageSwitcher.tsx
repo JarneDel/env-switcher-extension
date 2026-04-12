@@ -1,12 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, ChevronDown } from 'lucide-react';
 import { cn } from '../lib/utils';
-import type { LanguageOption } from '../types';
+import type { LanguageOption } from '@/types';
 
 interface Props {
   languages?: LanguageOption[];
   currentLanguage?: string;
   onSwitch: (language: LanguageOption) => void;
+  /** Controlled open state — when provided the parent owns open/close */
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const LANG_FLAGS: Record<string, string> = {
@@ -36,35 +39,17 @@ const Chin = ({ children, className }: { children: React.ReactNode; className?: 
   </div>
 );
 
-// ── single language button ────────────────────────────────────────────────────
-const LangBtn = ({
-  lang,
-  isActive,
-  onClick,
-}: {
-  lang: LanguageOption;
-  isActive: boolean;
-  onClick: () => void;
-}) => (
-  <button
-    onClick={onClick}
-    title={lang.name}
-    className={cn(
-      'flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-medium transition-all duration-100',
-      isActive
-        ? 'bg-accent border-accent text-foreground font-semibold'
-        : 'bg-transparent border-border text-muted-foreground hover:bg-accent hover:border-accent hover:text-foreground'
-    )}
-  >
-    <span className="text-sm leading-none select-none">{getFlag(lang.code)}</span>
-    <span className="tracking-wide">{lang.code.toUpperCase()}</span>
-  </button>
-);
-
 // ── main component ────────────────────────────────────────────────────────────
-const LanguageSwitcher: React.FC<Props> = ({ languages, currentLanguage, onSwitch }) => {
-  const [isOpen, setIsOpen] = useState(false);
+const LanguageSwitcher: React.FC<Props> = ({ languages, currentLanguage, onSwitch, isOpen: controlledIsOpen, onOpenChange }) => {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [search, setSearch] = useState('');
+
+  const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalOpen;
+  const setIsOpen = (val: boolean | ((prev: boolean) => boolean)) => {
+    const next = typeof val === 'function' ? val(isOpen) : val;
+    if (onOpenChange !== undefined) onOpenChange(next);
+    else setInternalOpen(next);
+  };
   const wrapperRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -96,23 +81,7 @@ const LanguageSwitcher: React.FC<Props> = ({ languages, currentLanguage, onSwitc
     setSearch('');
   };
 
-  // ── buttons mode (< 4 languages) ─────────────────────────────────────────
-  if (languages.length < 4) {
-    return (
-      <Chin>
-        {languages.map(lang => (
-          <LangBtn
-            key={lang.code}
-            lang={lang}
-            isActive={!!currentLanguage && sameRoot(currentLanguage, lang.code)}
-            onClick={() => handleSelect(lang)}
-          />
-        ))}
-      </Chin>
-    );
-  }
-
-  // ── dropdown mode (≥ 4 languages) ────────────────────────────────────────
+  // ── always use dropdown ───────────────────────────────────────────────────
   const filtered = search.trim()
     ? languages.filter(l =>
         l.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -134,7 +103,7 @@ const LanguageSwitcher: React.FC<Props> = ({ languages, currentLanguage, onSwitc
           )}
         >
           <span className="text-sm leading-none select-none">{getFlag(activeLang?.code ?? '')}</span>
-          <span className="max-w-[110px] truncate">{activeLang?.name ?? 'Language'}</span>
+          <span className="max-w-27.5 truncate">{activeLang?.name ?? 'Language'}</span>
           <ChevronDown
             size={11}
             className={cn('shrink-0 text-muted-foreground transition-transform duration-150', isOpen && 'rotate-180')}

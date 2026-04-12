@@ -1,5 +1,5 @@
 import browser from 'webextension-polyfill';
-import type { ExtensionConfig } from '../types';
+import type { ExtensionConfig } from '@/types';
 
 export type StoredConfig = ExtensionConfig;
 
@@ -23,7 +23,8 @@ export class ExtensionStorage {
       borderEnabled: true,
       borderHeight: 3,
       minimalBorderEnabled: false,
-      minimalBorderHeight: 4
+      minimalBorderHeight: 4,
+      favorites: [],
     };
   }
 
@@ -91,6 +92,7 @@ export const loadConfig = async (): Promise<StoredConfig> => {
       borderHeight: 3,
       minimalBorderEnabled: false,
       minimalBorderHeight: 4,
+      favorites: [],
     };
 
     if (!config || typeof config !== 'object') {
@@ -108,6 +110,7 @@ export const loadConfig = async (): Promise<StoredConfig> => {
       minimalBorderHeight: typeof config.minimalBorderHeight === 'number' ? config.minimalBorderHeight : 4,
       currentEnvironment: config.currentEnvironment,
       recentEnvironmentIds: Array.isArray(config.recentEnvironmentIds) ? config.recentEnvironmentIds : [],
+      favorites: Array.isArray(config.favorites) ? config.favorites : [],
     };
   } catch (error) {
     console.error('Failed to load config:', error);

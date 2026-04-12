@@ -44,7 +44,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, className = 
       />
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+4px)] right-0 z-50 bg-card border border-border rounded-md p-2 shadow-lg w-[132px]">
+        <div className="absolute top-[calc(100%+4px)] left-0 z-50 bg-card border border-border rounded-md p-2 shadow-lg w-[132px]">
           <div className="grid grid-cols-4 gap-1.5">
             {colors.map((color) => (
               <button

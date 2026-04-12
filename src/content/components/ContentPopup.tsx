@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import browser from 'webextension-polyfill';
+import { capitalize } from '@/lib/utils.ts';
 
 // Assuming this type is defined in a shared types file
 interface Environment {
@@ -91,7 +92,7 @@ export const ContentPopup: React.FC<ContentPopupProps> = ({ onClose }) => {
         }
         return environments.map((env, index) => (
             <div key={env.id} className="shortcut-item">
-                <span>{index + 1 === 10 ? 0 : index + 1}</span> {env.name}
+                <span>{index + 1 === 10 ? 0 : index + 1}</span> {capitalize(env.name)}
             </div>
         ));
     };

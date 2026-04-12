@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from 'react';
-import type { Environment, ExtensionConfig, Project } from '../types';
+import type { Environment, ExtensionConfig, Project } from '@/types';
 import { useConfigurationState } from '../hooks/useConfigurationState';
 
 interface ConfigurationContextType {
@@ -21,6 +21,7 @@ interface ConfigurationContextType {
   hasValidationErrors: () => boolean;
   getEnvironmentsByProject: (projectId: string) => Environment[];
   buildUpdatedConfig: () => ExtensionConfig;
+  currentTabUrl: string | undefined;
 }
 
 const ConfigurationContext = createContext<ConfigurationContextType | undefined>(undefined);

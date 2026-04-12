@@ -7,7 +7,8 @@
     "storage",
     "activeTab",
     "tabs",
-    "scripting"
+    "scripting",
+    "history"
   ],
   "host_permissions": [
     "http://*/*",
@@ -16,6 +17,14 @@
   "action": {
     "default_popup": "index.html",
     "default_title": "Environment Switcher"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+E"
+      },
+      "description": "Open Environment Switcher"
+    }
   },
   "content_scripts": [
     {

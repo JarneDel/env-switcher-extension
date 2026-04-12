@@ -1,7 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, Trash2, Plus, Globe } from 'lucide-react';
-import { cn } from '../lib/utils';
-import type { Project, Environment } from '../types';
+import { capitalize } from '../lib/utils';
+import type { Project, Environment } from '@/types';
+import { extractBaseDomain } from '../libs/urlUtils';
 import ColorPicker from './ColorPicker';
 import EnvironmentListItem from './EnvironmentListItem';
 import { Button } from './ui/button';
@@ -36,7 +37,18 @@ const ProjectListItem: React.FC<Props> = ({
     addCurrentDomain,
     newlyAddedProjects,
     clearNewlyAddedStatus,
+    currentTabUrl,
   } = useConfiguration();
+
+  const isAlreadyTracked = (() => {
+    if (!currentTabUrl) return false;
+    try {
+      const base = extractBaseDomain(currentTabUrl);
+      return environments.some(env => env.baseUrl === base);
+    } catch {
+      return false;
+    }
+  })();
 
   useEffect(() => {
     if (newlyAddedProjects.has(project.id)) {
@@ -61,12 +73,12 @@ const ProjectListItem: React.FC<Props> = ({
   const projectErrors = validateProject(project);
 
   return (
-    <div className={cn(
-      'rounded-md border bg-card',
-      projectErrors.length > 0 ? 'border-destructive' : 'border-border'
-    )}>
+    <div
+      className="flex flex-col border-l pl-3"
+      style={{ borderColor: project.color || '#6b7280' }}
+    >
       {/* project header row */}
-      <div className="flex items-center gap-2 p-2">
+      <div className="flex items-center gap-2 py-1.5">
         <Button
           variant="ghost"
           size="icon-sm"
@@ -98,7 +110,7 @@ const ProjectListItem: React.FC<Props> = ({
             onDoubleClick={() => setIsEditingName(true)}
             title="Double-click to edit"
           >
-            {project.name || `Project #${projectIndex + 1}`}
+            {capitalize(project.name) || `Project #${projectIndex + 1}`}
           </span>
         )}
 
@@ -118,7 +130,7 @@ const ProjectListItem: React.FC<Props> = ({
       </div>
 
       {projectErrors.length > 0 && (
-        <div className="flex flex-wrap gap-1 px-2 pb-1">
+        <div className="flex flex-wrap gap-1 pb-1">
           {projectErrors.map((err, i) => (
             <span key={i} className="text-xs text-destructive">{err}</span>
           ))}
@@ -127,7 +139,7 @@ const ProjectListItem: React.FC<Props> = ({
 
       {/* collapsible environment list */}
       <div {...collapseProps}>
-        <div className="flex flex-col gap-1.5 px-2 pb-2">
+        <div className="flex flex-col gap-1.5 pb-1">
           {environments.map((env) => (
             <EnvironmentListItem
               key={env.id}
@@ -149,6 +161,8 @@ const ProjectListItem: React.FC<Props> = ({
               size="sm"
               onClick={() => addCurrentDomain(project.id)}
               className="flex-1 text-xs h-7"
+              disabled={isAlreadyTracked}
+              title={isAlreadyTracked ? 'Current page is already tracked in this project' : undefined}
             >
               <Globe size={12} /> Add current
             </Button>

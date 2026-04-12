@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react';
-import type { Environment, ExtensionConfig, Project } from '../types';
-import { getRandomColor } from '../libs/colorUtils';
+import { useState, useRef, useEffect } from 'react';
+import type { Environment, ExtensionConfig, Project } from '@/types';
+import { getRandomColor, getSuggestedColorForEnvironment } from '../libs/colorUtils';
 import { validateProject, validateEnvironment, hasValidationErrors } from '../libs/validationUtils';
 import { getCurrentTabUrl, extractBaseDomain } from '../libs/urlUtils';
 import browser from 'webextension-polyfill';
@@ -17,7 +17,13 @@ export const useConfigurationState = (config: ExtensionConfig) => {
   const [newlyAddedProjects, setNewlyAddedProjects] = useState<Set<string>>(new Set());
   const [newlyAddedEnvironments, setNewlyAddedEnvironments] = useState<Set<string>>(new Set());
 
+  const [currentTabUrl, setCurrentTabUrl] = useState<string | undefined>(undefined);
+
   const configurationPanel = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    getCurrentTabUrl().then(setCurrentTabUrl).catch(() => { /* ignore */ });
+  }, []);
 
   // Notify background script when environments change
   const notifyEnvironmentChange = async () => {
@@ -158,7 +164,7 @@ export const useConfigurationState = (config: ExtensionConfig) => {
         id: `env-${Date.now()}`,
         name: environmentName,
         baseUrl: baseDomain,
-        color: getRandomColor(),
+        color: getSuggestedColorForEnvironment(environmentName, baseDomain),
         projectId: targetProjectId!
       };
 
@@ -242,6 +248,7 @@ export const useConfigurationState = (config: ExtensionConfig) => {
     newlyAddedEnvironments,
     clearNewlyAddedStatus,
     configurationPanel,
+    currentTabUrl,
     handleProjectChange,
     addProject,
     removeProject,

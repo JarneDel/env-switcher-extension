@@ -82,3 +82,25 @@ export const rgbToHex = (r: number, g: number, b: number): string => {
 
   return '#' + toHex(r) + toHex(g) + toHex(b);
 };
+
+/**
+ * Suggest a semantic color for an environment based on its name and URL.
+ * Falls back to a random palette color for unrecognized patterns.
+ * @param name - Environment display name
+ * @param url - Environment base URL
+ * @returns Hex color string
+ */
+export const getSuggestedColorForEnvironment = (name: string, url: string): string => {
+  let hostname = '';
+  try {
+    hostname = new URL(url).hostname.toLowerCase();
+  } catch { /* ignore */ }
+  const combined = (name.toLowerCase() + ' ' + hostname);
+
+  if (/prod|prd|production/.test(combined)) return '#dc2626'; // Red
+  if (/\blocalhost\b|\blocal\b/.test(combined)) return '#16a34a'; // Green
+  if (/test|staging|\bstg\b|\btst\b/.test(combined)) return '#ea580c'; // Orange
+  if (/\bdev\b|development/.test(combined)) return '#2563eb'; // Blue
+
+  return getRandomColor();
+};

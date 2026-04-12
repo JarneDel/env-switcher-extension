@@ -131,7 +131,7 @@
     @apply font-sans overflow-hidden;
   }
   body {
-    @apply bg-background text-foreground m-0 min-h-[600px];
+    @apply bg-background text-foreground m-0 min-h-150;
   }
   h1, h2, h3, h4, h5, h6 {
     font-size: inherit;
@@ -210,3 +210,5 @@
   cursor: pointer;
   border: none;
 }
+
+
