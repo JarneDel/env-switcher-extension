@@ -68,12 +68,12 @@ export class FaviconUpdater {
                 this.currentEnvironment = environment;
 
                 // Only update favicon if enabled in settings
-                if (config.faviconEnabled !== false) {
+                if (config.faviconEnabled === true) {
                     await this.updateFavicons(environment.color);
                 }
 
                 // Only update border if enabled in settings
-                if (config.borderEnabled !== false) {
+                if (config.borderEnabled === true) {
                     const borderHeight = config.borderHeight || 3; // Default to 3px if not specified
                     this.updateBodyBorder(environment.color, borderHeight);
                 }

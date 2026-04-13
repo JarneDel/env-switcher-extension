@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, AlertTriangle, Star, Keyboard } from 'lucide-react';
+import { Settings, AlertTriangle, Star, Keyboard, SlidersHorizontal } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn, capitalize } from '../lib/utils';
 import type { Environment, TabInfo, ExtensionConfig, LanguageOption, VisitedPage, FavoritePage } from '@/types';
@@ -185,15 +185,33 @@ export default function MainView({
 
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {activeTab === 'envs' ? (
-            <EnvironmentSwitcher
-              environments={config?.environments || []}
-              projects={config?.projects || []}
-              currentEnvironment={currentTab?.currentEnvironment}
-              recentEnvironmentIds={config?.recentEnvironmentIds || []}
-              onSwitch={onEnvironmentSwitch}
-              onSwitchNewTab={onEnvironmentSwitchNewTab}
-              focusSearchTrigger={focusEnvSearch}
-            />
+            <>
+              <EnvironmentSwitcher
+                environments={config?.environments || []}
+                projects={config?.projects || []}
+                currentEnvironment={currentTab?.currentEnvironment}
+                recentEnvironmentIds={config?.recentEnvironmentIds || []}
+                onSwitch={onEnvironmentSwitch}
+                onSwitchNewTab={onEnvironmentSwitchNewTab}
+                focusSearchTrigger={focusEnvSearch}
+              />
+              {!config?.hasVisitedDisplaySettings && (
+                <button
+                  onClick={() => navigate('/settings/display')}
+                  className="flex items-start gap-2.5 mx-3 mb-3 px-3 py-2.5 rounded-md border border-primary/30 bg-primary/5 text-left hover:bg-primary/10 transition-colors cursor-pointer"
+                >
+                  <SlidersHorizontal size={14} className="shrink-0 mt-0.5 text-primary" />
+                  <div>
+                    <p className="text-[0.8125rem] font-medium text-foreground leading-snug">
+                      Customize display settings
+                    </p>
+                    <p className="text-[0.75rem] text-muted-foreground mt-0.5 leading-snug">
+                      Enable favicon borders, page borders, and more visual environment indicators.
+                    </p>
+                  </div>
+                </button>
+              )}
+            </>
           ) : activeTab === 'pages' ? (
             <PageShortcuts
               pages={projectPages}

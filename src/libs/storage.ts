@@ -1,4 +1,3 @@
-import browser from 'webextension-polyfill';
 import type { ExtensionConfig } from '@/types';
 
 export type StoredConfig = ExtensionConfig;
@@ -19,17 +18,19 @@ export class ExtensionStorage {
       environments: [],
       projects: [],
       autoDetectLanguages: true,
-      faviconEnabled: true,
-      borderEnabled: true,
+      faviconEnabled: false,
+      borderEnabled: false,
       borderHeight: 3,
       minimalBorderEnabled: false,
       minimalBorderHeight: 4,
       favorites: [],
+      hasVisitedDisplaySettings: false,
+      recentsProjectScoped: false,
     };
   }
 
   // Choose between sync and local storage
-  private static async getStorage(sync = true): Promise<browser.Storage.StorageArea> {
+  private static async getStorage(sync = true): Promise<Browser.Storage.StorageArea> {
     if (sync && browser.storage.sync) {
       return browser.storage.sync;
     }
@@ -41,7 +42,7 @@ export class ExtensionStorage {
       const storage = await this.getStorage(sync);
       const result = await storage.get('extensionConfig');
       if (this.isValidConfig(result.extensionConfig)) {
-        return result.extensionConfig;
+        return { ...this.getDefaultConfig(), ...result.extensionConfig };
       }
       return this.getDefaultConfig();
     } catch (error) {
@@ -79,7 +80,7 @@ export class ExtensionStorage {
 // AI-aware storage functions that work with the same storage location
 export const loadConfig = async (): Promise<StoredConfig> => {
   try {
-    const storage = await browser.storage.sync || browser.storage.local;
+    const storage = browser.storage.sync ?? browser.storage.local;
     const result = await storage.get('extensionConfig');
     const config = result.extensionConfig as any;
 
@@ -87,12 +88,14 @@ export const loadConfig = async (): Promise<StoredConfig> => {
       projects: [],
       environments: [],
       autoDetectLanguages: true,
-      faviconEnabled: true,
-      borderEnabled: true,
+      faviconEnabled: false,
+      borderEnabled: false,
       borderHeight: 3,
       minimalBorderEnabled: false,
       minimalBorderHeight: 4,
       favorites: [],
+      hasVisitedDisplaySettings: false,
+      recentsProjectScoped: false,
     };
 
     if (!config || typeof config !== 'object') {
@@ -103,14 +106,16 @@ export const loadConfig = async (): Promise<StoredConfig> => {
       projects: Array.isArray(config.projects) ? config.projects : [],
       environments: Array.isArray(config.environments) ? config.environments : [],
       autoDetectLanguages: typeof config.autoDetectLanguages === 'boolean' ? config.autoDetectLanguages : true,
-      faviconEnabled: typeof config.faviconEnabled === 'boolean' ? config.faviconEnabled : true,
-      borderEnabled: typeof config.borderEnabled === 'boolean' ? config.borderEnabled : true,
+      faviconEnabled: typeof config.faviconEnabled === 'boolean' ? config.faviconEnabled : false,
+      borderEnabled: typeof config.borderEnabled === 'boolean' ? config.borderEnabled : false,
       borderHeight: typeof config.borderHeight === 'number' ? config.borderHeight : 3,
       minimalBorderEnabled: typeof config.minimalBorderEnabled === 'boolean' ? config.minimalBorderEnabled : false,
       minimalBorderHeight: typeof config.minimalBorderHeight === 'number' ? config.minimalBorderHeight : 4,
       currentEnvironment: config.currentEnvironment,
       recentEnvironmentIds: Array.isArray(config.recentEnvironmentIds) ? config.recentEnvironmentIds : [],
       favorites: Array.isArray(config.favorites) ? config.favorites : [],
+      hasVisitedDisplaySettings: typeof config.hasVisitedDisplaySettings === 'boolean' ? config.hasVisitedDisplaySettings : false,
+      recentsProjectScoped: typeof config.recentsProjectScoped === 'boolean' ? config.recentsProjectScoped : false,
     };
   } catch (error) {
     console.error('Failed to load config:', error);
@@ -124,7 +129,7 @@ export const loadConfig = async (): Promise<StoredConfig> => {
 
 export const saveConfig = async (config: StoredConfig): Promise<void> => {
   try {
-    const storage = await browser.storage.sync || browser.storage.local;
+    const storage = browser.storage.sync ?? browser.storage.local;
     await storage.set({ extensionConfig: config });
   } catch (error) {
     console.error('Failed to save config:', error);

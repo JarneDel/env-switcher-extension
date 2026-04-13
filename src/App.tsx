@@ -27,14 +27,10 @@ function App() {
       loadInitialData();
     };
 
-    if (typeof chrome !== 'undefined' && chrome.tabs) {
-      chrome.tabs.onUpdated.addListener(handleTabUpdate);
-
-      // Cleanup listener on unmount
-      return () => {
-        chrome.tabs.onUpdated.removeListener(handleTabUpdate);
-      };
-    }
+    browser.tabs.onUpdated.addListener(handleTabUpdate);
+    return () => {
+      browser.tabs.onUpdated.removeListener(handleTabUpdate);
+    };
   }, []);
 
   // Reload data when navigating back to main view so auto-saved changes are reflected
@@ -56,12 +52,8 @@ function App() {
   }, [loading, isConfigured, location.pathname, navigate]);
 
   const getCurrentTabInfo = async (extensionConfig: ExtensionConfig) => {
-    if (typeof chrome === 'undefined' || !chrome.tabs?.query) {
-      return null;
-    }
-
     try {
-      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      const tabs = await browser.tabs.query({ active: true, currentWindow: true });
       const activeTab = tabs[0];
 
       if (!activeTab?.url) {
@@ -74,7 +66,7 @@ function App() {
       // Try to get available languages from content script
       let availableLanguages = [];
       try {
-        const response = await chrome.tabs.sendMessage(activeTab.id!, { action: 'getLanguages' });
+        const response = await browser.tabs.sendMessage(activeTab.id!, { action: 'getLanguages' });
         availableLanguages = response?.languages || [];
       } catch {
         // Content script not available, use empty array
@@ -94,7 +86,6 @@ function App() {
   const MAX_VISITED = 50;
 
   const loadHistoryPages = async (cfg: ExtensionConfig, projectId: string): Promise<VisitedPage[]> => {
-    if (typeof chrome === 'undefined' || !chrome.history) return [];
     const projectEnvs = cfg.environments.filter(e => e.projectId === projectId);
     if (projectEnvs.length === 0) return [];
 
@@ -103,7 +94,7 @@ function App() {
       const allItems: VisitedPage[] = [];
 
       for (const env of projectEnvs) {
-        const results = await chrome.history.search({ text: env.baseUrl, maxResults: 200, startTime: 0 });
+        const results = await browser.history.search({ text: env.baseUrl, maxResults: 200, startTime: 0 });
         for (const item of results) {
           if (!item.url || !item.url.startsWith(env.baseUrl)) continue;
           try {
@@ -219,12 +210,10 @@ function App() {
         currentTab.currentEnvironment
       );
 
-      if (typeof chrome !== 'undefined' && chrome.tabs) {
-        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tabs[0] && typeof tabs[0].id === 'number') {
-          await chrome.tabs.update(tabs[0].id, { url: newUrl });
-          await ExtensionStorage.setCurrentEnvironment(targetEnv.id);
-        }
+      const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+      if (tabs[0] && typeof tabs[0].id === 'number') {
+        await browser.tabs.update(tabs[0].id, { url: newUrl });
+        await ExtensionStorage.setCurrentEnvironment(targetEnv.id);
       }
       if (config) await addToRecents(targetEnv.id, config);
     } catch (error) {
@@ -242,9 +231,7 @@ function App() {
         currentTab.currentEnvironment
       );
 
-      if (typeof chrome !== 'undefined' && chrome.tabs) {
-        await chrome.tabs.create({ url: newUrl });
-      }
+      await browser.tabs.create({ url: newUrl });
       if (config) await addToRecents(targetEnv.id, config);
     } catch (error) {
       console.error('Error opening environment in new tab:', error);
@@ -255,11 +242,9 @@ function App() {
     if (!currentTab) return;
 
     try {
-      if (typeof chrome !== 'undefined' && chrome.tabs) {
-        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tabs[0] && typeof tabs[0].id === 'number') {
-          await chrome.tabs.update(tabs[0].id, { url: language.url });
-        }
+      const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+      if (tabs[0] && typeof tabs[0].id === 'number') {
+        await browser.tabs.update(tabs[0].id, { url: language.url });
       }
     } catch (error) {
       console.error('Error switching language:', error);
@@ -268,11 +253,9 @@ function App() {
 
   const handlePageNavigate = async (url: string) => {
     try {
-      if (typeof chrome !== 'undefined' && chrome.tabs) {
-        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tabs[0] && typeof tabs[0].id === 'number') {
-          await chrome.tabs.update(tabs[0].id, { url });
-        }
+      const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+      if (tabs[0] && typeof tabs[0].id === 'number') {
+        await browser.tabs.update(tabs[0].id, { url });
       }
     } catch (error) {
       console.error('Error navigating to page:', error);
@@ -281,9 +264,7 @@ function App() {
 
   const handlePageNavigateNewTab = async (url: string) => {
     try {
-      if (typeof chrome !== 'undefined' && chrome.tabs) {
-        await chrome.tabs.create({ url });
-      }
+      await browser.tabs.create({ url });
     } catch (error) {
       console.error('Error opening page in new tab:', error);
     }
