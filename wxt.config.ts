@@ -29,7 +29,7 @@ export default defineConfig({
                 (manifest as any).browser_specific_settings = {
                     gecko: {
                         id: 'env-switcher@example.com',
-                        strict_min_version: '1.0.7',
+                        strict_min_version: '112.0',
                     },
                 };
                 if (manifest.commands?._execute_action?.suggested_key) {
