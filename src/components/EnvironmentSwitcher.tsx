@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import Fuse from 'fuse.js';
 import { Search } from 'lucide-react';
 import { cn, capitalize } from '../lib/utils';
 import type { Environment, Project } from '@/types';
@@ -11,16 +12,6 @@ interface Props {
   onSwitch: (env: Environment) => void;
   onSwitchNewTab: (env: Environment) => void;
   focusSearchTrigger?: number;
-}
-
-function fuzzyMatch(needle: string, haystack: string): boolean {
-  const n = needle.toLowerCase();
-  const h = haystack.toLowerCase();
-  let ni = 0;
-  for (let hi = 0; hi < h.length && ni < n.length; hi++) {
-    if (h[hi] === n[ni]) ni++;
-  }
-  return ni === n.length;
 }
 
 function getHostname(url: string): string {
@@ -60,10 +51,12 @@ const EnvironmentSwitcher: React.FC<Props> = ({
 
   const searchGroups = useMemo(() => {
     if (!search.trim()) return null;
-    const q = search.trim();
-    const matched = environments.filter(e =>
-      fuzzyMatch(q, e.name) || fuzzyMatch(q, getHostname(e.baseUrl)) || fuzzyMatch(q, e.baseUrl)
-    );
+    const fuse = new Fuse(environments, {
+      keys: ['name', { name: 'hostname', getFn: (e: Environment) => getHostname(e.baseUrl) }, 'baseUrl'],
+      threshold: 0.4,
+      includeScore: true,
+    });
+    const matched = fuse.search(search.trim()).map(r => r.item);
     const groups = new Map<string, Environment[]>();
     for (const env of matched) {
       if (!groups.has(env.projectId)) groups.set(env.projectId, []);

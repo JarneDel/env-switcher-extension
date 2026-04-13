@@ -126,10 +126,10 @@ export default function MainView({
 
   const scopedRecentEnvironmentIds = useMemo(() => {
     const all = config?.recentEnvironmentIds || [];
-    if (!currentTab?.currentEnvironment) return config?.recentsProjectScoped ? [] : all;
+    if (!currentTab?.currentEnvironment) return all;
     const projectId = currentTab.currentEnvironment.projectId;
     return all.filter(id => config?.environments.find(e => e.id === id)?.projectId === projectId);
-  }, [config?.recentEnvironmentIds, config?.recentsProjectScoped, config?.environments, currentTab?.currentEnvironment]);
+  }, [config?.recentEnvironmentIds, config?.environments, currentTab?.currentEnvironment]);
 
   const projectPages = visitedPages
     .filter(p => !currentTab?.currentLanguage || p.language === currentTab.currentLanguage)

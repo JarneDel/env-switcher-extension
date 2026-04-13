@@ -179,24 +179,6 @@ const DisplaySettingsPanel: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Recents ── */}
-      <div className="border-t border-border pt-4">
-        <h3 className="text-[0.9375rem] font-semibold text-foreground mb-3">Recents</h3>
-        <div>
-          <label className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer">
-            <input
-              type="checkbox"
-              checked={config.recentsProjectScoped ?? false}
-              onChange={(e) => update({ recentsProjectScoped: e.target.checked })}
-              className="m-0"
-            />
-            Scope recents to current project
-          </label>
-          <p className="ml-6 mt-1 text-[0.8125rem] text-muted-foreground leading-[1.4]">
-            On unrecognized sites, hide recents instead of showing all projects.
-          </p>
-        </div>
-      </div>
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import Fuse from 'fuse.js';
 import { Search, ChevronRight, Star } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { VisitedPage } from '@/types';
@@ -28,16 +29,6 @@ const LANG_FLAGS: Record<string, string> = {
 function getFlag(lang?: string): string {
   if (!lang) return '🌐';
   return LANG_FLAGS[lang.split('-')[0].toLowerCase()] || '🌐';
-}
-
-function fuzzyMatch(needle: string, haystack: string): boolean {
-  const n = needle.toLowerCase();
-  const h = haystack.toLowerCase();
-  let ni = 0;
-  for (let hi = 0; hi < h.length && ni < n.length; hi++) {
-    if (h[hi] === n[ni]) ni++;
-  }
-  return ni === n.length;
 }
 
 function decodeSeg(s: string): string {
@@ -254,10 +245,16 @@ export default function PageShortcuts({ pages, favoriteKeys, currentEnvironmentO
   const flatFiltered = useMemo((): VisitedPage[] | null => {
     if (!search.trim()) return null;
     const q = search.trim();
-    return pages.filter(p => {
-      const path = (() => { try { return new URL(p.url).pathname; } catch { return ''; } })();
-      return fuzzyMatch(q, p.title) || fuzzyMatch(q, path) || (!!p.language && fuzzyMatch(q, p.language));
+    const fuse = new Fuse(pages, {
+      keys: [
+        'title',
+        { name: 'path', getFn: (p: VisitedPage) => { try { return new URL(p.url).pathname; } catch { return ''; } } },
+        'language',
+      ],
+      threshold: 0.4,
+      includeScore: true,
     });
+    return fuse.search(q).map(r => r.item);
   }, [pages, search]);
 
   return (
