@@ -54,6 +54,8 @@ export interface ExtensionConfig {
   minimalBorderHeight?: number;
   recentEnvironmentIds?: string[];
   favorites?: FavoritePage[];
+  hasVisitedDisplaySettings?: boolean;
+  recentsProjectScoped?: boolean;
 }
 
 export interface TabInfo {

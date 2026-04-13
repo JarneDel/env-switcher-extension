@@ -26,6 +26,7 @@ export default defineConfig(({mode}) => {
                 // Disable auto-launching the browser (load the dist folder manually)
                 disableAutoLaunch: true,
                 watchFilePaths: ['src/**'],
+                
             }),
         ],
 

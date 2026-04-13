@@ -55,7 +55,14 @@ const DisplaySettingsPanel: React.FC = () => {
   const loadStoredConfig = async () => {
     try {
       const currentConfig = await loadConfig();
-      setConfig(currentConfig);
+      // Mark as visited so the hint in the main view is dismissed
+      if (!currentConfig.hasVisitedDisplaySettings) {
+        const updated = { ...currentConfig, hasVisitedDisplaySettings: true };
+        await saveConfig(updated);
+        setConfig(updated);
+      } else {
+        setConfig(currentConfig);
+      }
     } catch {
       // silently handle
     } finally {
@@ -92,7 +99,7 @@ const DisplaySettingsPanel: React.FC = () => {
             <label className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer">
               <input
                 type="checkbox"
-                checked={config.faviconEnabled ?? true}
+                checked={config.faviconEnabled ?? false}
                 onChange={(e) => update({ faviconEnabled: e.target.checked })}
                 className="m-0"
               />
@@ -107,7 +114,7 @@ const DisplaySettingsPanel: React.FC = () => {
             <label className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer">
               <input
                 type="checkbox"
-                checked={config.borderEnabled ?? true}
+                checked={config.borderEnabled ?? false}
                 onChange={(e) => update({ borderEnabled: e.target.checked })}
                 className="m-0"
               />
@@ -116,7 +123,7 @@ const DisplaySettingsPanel: React.FC = () => {
             <p className="ml-6 mt-1 text-[0.8125rem] text-muted-foreground leading-[1.4]">
               Add a colored border around the entire webpage to indicate the current environment.
             </p>
-            {config.borderEnabled !== false && (
+            {!!config.borderEnabled && (
               <div className="ml-6 mt-2">
                 <span className="block text-sm font-medium text-foreground mb-1">Border Height</span>
                 <HeightControl
@@ -168,6 +175,25 @@ const DisplaySettingsPanel: React.FC = () => {
           </label>
           <p className="ml-6 mt-1 text-[0.8125rem] text-muted-foreground leading-[1.4]">
             Automatically detect and show available languages on websites for quick switching.
+          </p>
+        </div>
+      </div>
+
+      {/* ── Recents ── */}
+      <div className="border-t border-border pt-4">
+        <h3 className="text-[0.9375rem] font-semibold text-foreground mb-3">Recents</h3>
+        <div>
+          <label className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer">
+            <input
+              type="checkbox"
+              checked={config.recentsProjectScoped ?? false}
+              onChange={(e) => update({ recentsProjectScoped: e.target.checked })}
+              className="m-0"
+            />
+            Scope recents to current project
+          </label>
+          <p className="ml-6 mt-1 text-[0.8125rem] text-muted-foreground leading-[1.4]">
+            Only show pages from the currently active project in the Pages tab.
           </p>
         </div>
       </div>
