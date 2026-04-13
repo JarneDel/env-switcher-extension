@@ -118,6 +118,19 @@ export default function MainView({
     try { return new URL(currentTab?.currentEnvironment?.baseUrl || '').origin; } catch { return undefined; }
   }, [currentTab?.currentEnvironment?.baseUrl]);
 
+  const scopedEnvironments = useMemo(() => {
+    const all = config?.environments || [];
+    if (!currentTab?.currentEnvironment) return all;
+    return all.filter(e => e.projectId === currentTab.currentEnvironment!.projectId);
+  }, [config?.environments, currentTab?.currentEnvironment]);
+
+  const scopedRecentEnvironmentIds = useMemo(() => {
+    const all = config?.recentEnvironmentIds || [];
+    if (!currentTab?.currentEnvironment) return config?.recentsProjectScoped ? [] : all;
+    const projectId = currentTab.currentEnvironment.projectId;
+    return all.filter(id => config?.environments.find(e => e.id === id)?.projectId === projectId);
+  }, [config?.recentEnvironmentIds, config?.recentsProjectScoped, config?.environments, currentTab?.currentEnvironment]);
+
   const projectPages = visitedPages
     .filter(p => !currentTab?.currentLanguage || p.language === currentTab.currentLanguage)
     .slice(0, 20);
@@ -187,10 +200,10 @@ export default function MainView({
           {activeTab === 'envs' ? (
             <>
               <EnvironmentSwitcher
-                environments={config?.environments || []}
+                environments={scopedEnvironments}
                 projects={config?.projects || []}
                 currentEnvironment={currentTab?.currentEnvironment}
-                recentEnvironmentIds={config?.recentEnvironmentIds || []}
+                recentEnvironmentIds={scopedRecentEnvironmentIds}
                 onSwitch={onEnvironmentSwitch}
                 onSwitchNewTab={onEnvironmentSwitchNewTab}
                 focusSearchTrigger={focusEnvSearch}

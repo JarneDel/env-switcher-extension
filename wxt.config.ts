@@ -41,10 +41,20 @@ export default defineConfig({
                     gecko: {
                         id: 'env-switcher@example.com',
                         strict_min_version: '112.0',
+                        data_collection_permissions: {
+                            required: ['none'],
+                        },
                     },
                 };
-                if (manifest.commands?._execute_action?.suggested_key) {
-                    delete (manifest.commands._execute_action.suggested_key as any).mac;
+
+                // For Firefox MV2, the popup hotkey must be _execute_browser_action.
+                if ((manifest as any).manifest_version === 2) {
+                    const commands = (manifest as any).commands ?? {};
+                    if (commands._execute_action && !commands._execute_browser_action) {
+                        commands._execute_browser_action = commands._execute_action;
+                        delete commands._execute_action;
+                    }
+                    (manifest as any).commands = commands;
                 }
             }
         },

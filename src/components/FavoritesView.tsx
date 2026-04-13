@@ -49,9 +49,10 @@ export default function FavoritesView({ favorites, visitedPages, currentEnvironm
       } catch { /* skip */ }
     }
 
-    // Filter by language: hide favorites whose language differs from current
+    // Filter by project, then by language
     const filtered = favorites.filter(fav =>
-      !currentLanguage || !fav.language || fav.language === currentLanguage
+      (!currentEnvironment || fav.projectId === currentEnvironment.projectId) &&
+      (!currentLanguage || !fav.language || fav.language === currentLanguage)
     );
 
     return filtered.sort((a, b) => {
@@ -63,7 +64,7 @@ export default function FavoritesView({ favorites, visitedPages, currentEnvironm
   if (sorted.length === 0) {
     return (
       <p className="text-slate-500 text-[0.8125rem] p-8 text-center leading-relaxed">
-        {favorites.length === 0 ? 'No favorites yet — star pages to add them here' : 'No favorites for this language'}
+        {favorites.length === 0 ? 'No favorites yet — star pages to add them here' : 'No favorites for this project'}
       </p>
     );
   }

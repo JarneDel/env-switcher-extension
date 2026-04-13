@@ -26,7 +26,7 @@ function bumpVersion() {
 
     // 4. Update wxt.config.ts
     let wxtConfig = fs.readFileSync(wxtConfigPath, 'utf-8');
-    const versionRegex = /version:\s*'[^']+'/g;
+    const versionRegex = /\bversion:\s*'[^']+'/g;
     wxtConfig = wxtConfig.replace(versionRegex, `version: '${newVersion}'`);
     fs.writeFileSync(wxtConfigPath, wxtConfig);
     console.log(`Updated wxt.config.ts with version ${newVersion}`);

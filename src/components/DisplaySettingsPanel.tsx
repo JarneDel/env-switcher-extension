@@ -193,7 +193,7 @@ const DisplaySettingsPanel: React.FC = () => {
             Scope recents to current project
           </label>
           <p className="ml-6 mt-1 text-[0.8125rem] text-muted-foreground leading-[1.4]">
-            Only show pages from the currently active project in the Pages tab.
+            On unrecognized sites, hide recents instead of showing all projects.
           </p>
         </div>
       </div>
