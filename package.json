@@ -1,7 +1,7 @@
 {
   "name": "env-switcher",
   "private": false,
-  "version": "1.0.6",
+  "version": "1.0.7",
   "type": "module",
   "scripts": {
     "postinstall": "wxt prepare",
@@ -13,6 +13,7 @@
     "build:firefox": "wxt build --browser firefox",
     "package:chrome": "wxt zip --browser chrome",
     "package:firefox": "wxt zip --browser firefox",
+    "publish-for-real": "node scripts/publish.js",
     "lint": "eslint ."
   },
   "dependencies": {
