@@ -11,7 +11,7 @@ export default defineConfig({
 
     manifest: {
         name: 'Environment Switcher',
-        version: '1.0.8',
+        version: '1.0.9',
         description: 'Switch between different environments and languages with ease',
         permissions: ['storage', 'activeTab', 'tabs', 'scripting', 'history'],
         host_permissions: ['http://*/*', 'https://*/*'],
@@ -40,7 +40,7 @@ export default defineConfig({
                 (manifest as any).browser_specific_settings = {
                     gecko: {
                         id: 'env-switcher@example.com',
-                        strict_min_version: '1.0.8',
+                        strict_min_version: '112.0',
                     },
                 };
                 if (manifest.commands?._execute_action?.suggested_key) {
