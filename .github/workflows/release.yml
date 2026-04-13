@@ -1,77 +1,44 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
 
 jobs:
-  build:
-    name: Build & Package
+  submit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'
+          node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
         run: npm install
 
-      - name: Build
-        run: npm run build
-
-      - name: Package
+      - name: Build and Zip extensions
         run: |
-          npm run package:chrome
-          npm run package:firefox
+          npm run zip
+          npm run zip:firefox
 
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: extension-packages
-          path: .output/*.zip
+      - name: Submit to stores
+        run: |
+          npx wxt submit \
+            --chrome-zip .output/*-chrome.zip \
+            --firefox-zip .output/*-firefox.zip \
+            --firefox-sources-zip .output/*-sources.zip
+        env:
+          # Chrome Credentials
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
 
-  release-chrome:
-    name: Release to Chrome Web Store
-    needs: build
-    runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, 'NO_CHROME_STORE')"
-    steps:
-      - name: Download Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: extension-packages
-
-      - name: Upload to Chrome Web Store
-        uses: mobilefirst-inc/chrome-extension-upload@v2
-        with:
-          file-path: .output/env-switcher-*-chrome.zip
-          extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
-          client-id: ${{ secrets.CHROME_CLIENT_ID }}
-          client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
-          refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
-          publish: true
-
-  release-firefox:
-    name: Release to Firefox Add-ons
-    needs: build
-    runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, 'NO_FIREFOX_STORE')"
-    steps:
-      - name: Download Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: extension-packages
-
-      - name: Upload to Firefox Add-ons (AMO)
-        uses: wxt-dev/wxt-action@v1
-        with:
-          command: submit
-          browser: firefox
-          zip: .output/env-switcher-*-firefox.zip
-          api-key: ${{ secrets.MOZILLA_API_KEY }}
-          api-secret: ${{ secrets.MOZILLA_API_SECRET }}
+          # Firefox Credentials
+          # Mapping your "MOZILLA" secrets to WXT's required variable names
+          FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID }}
+          FIREFOX_JWT_ISSUER: ${{ secrets.MOZILLA_API_KEY }}
+          FIREFOX_JWT_SECRET: ${{ secrets.MOZILLA_API_SECRET }}
