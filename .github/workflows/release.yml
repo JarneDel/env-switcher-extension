@@ -21,8 +21,8 @@ jobs:
 
       - name: Build and Zip extensions
         run: |
-          npm run zip
-          npm run zip:firefox
+          npm run package:chrome
+          npm run package:firefox
 
       - name: Submit to stores
         run: |
