@@ -3,7 +3,6 @@ import type { Environment, ExtensionConfig, Project } from '@/types';
 import { getRandomColor, getSuggestedColorForEnvironment } from '../libs/colorUtils';
 import { validateProject, validateEnvironment, hasValidationErrors } from '../libs/validationUtils';
 import { getCurrentTabUrl, extractBaseDomain } from '../libs/urlUtils';
-import browser from 'webextension-polyfill';
 
 export const useConfigurationState = (config: ExtensionConfig) => {
   const [editingProjects, setEditingProjects] = useState<Project[]>(

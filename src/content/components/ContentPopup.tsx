@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import browser from 'webextension-polyfill';
 import { capitalize } from '@/lib/utils.ts';
 
 // Assuming this type is defined in a shared types file

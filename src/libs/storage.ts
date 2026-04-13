@@ -1,4 +1,3 @@
-import browser from 'webextension-polyfill';
 import type { ExtensionConfig } from '@/types';
 
 export type StoredConfig = ExtensionConfig;
@@ -31,7 +30,7 @@ export class ExtensionStorage {
   }
 
   // Choose between sync and local storage
-  private static async getStorage(sync = true): Promise<browser.Storage.StorageArea> {
+  private static async getStorage(sync = true): Promise<Browser.Storage.StorageArea> {
     if (sync && browser.storage.sync) {
       return browser.storage.sync;
     }
@@ -81,7 +80,7 @@ export class ExtensionStorage {
 // AI-aware storage functions that work with the same storage location
 export const loadConfig = async (): Promise<StoredConfig> => {
   try {
-    const storage = await browser.storage.sync || browser.storage.local;
+    const storage = browser.storage.sync ?? browser.storage.local;
     const result = await storage.get('extensionConfig');
     const config = result.extensionConfig as any;
 
@@ -130,7 +129,7 @@ export const loadConfig = async (): Promise<StoredConfig> => {
 
 export const saveConfig = async (config: StoredConfig): Promise<void> => {
   try {
-    const storage = await browser.storage.sync || browser.storage.local;
+    const storage = browser.storage.sync ?? browser.storage.local;
     await storage.set({ extensionConfig: config });
   } catch (error) {
     console.error('Failed to save config:', error);
