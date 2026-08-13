@@ -1,9 +1,10 @@
 import { useNavigate, Routes, Route, useLocation } from 'react-router-dom';
-import { Eye, FolderOpen } from 'lucide-react';
+import { Eye, FolderOpen, Share2 } from 'lucide-react';
 import { Button } from './ui/button';
 import TabStrip from './TabStrip';
 import ProjectSettingsPanel from './ProjectSettingsPanel';
 import DisplaySettingsPanel from './DisplaySettingsPanel';
+import DataSettingsPanel from './DataSettingsPanel';
 
 interface SettingsViewProps {
   isConfigured: boolean;
@@ -17,7 +18,11 @@ export default function SettingsView({
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isDisplayTab = location.pathname === '/settings/display';
+  const activeTab = location.pathname === '/settings/display'
+    ? 'display'
+    : location.pathname === '/settings/data'
+      ? 'data'
+      : 'projects';
 
   return (
     <>
@@ -38,11 +43,12 @@ export default function SettingsView({
       {/* tab strip + content */}
       <div className="flex flex-col flex-1 overflow-y-auto">
         <TabStrip
-          activeTab={isDisplayTab ? 'display' : 'projects'}
-          onTabChange={(id) => navigate(id === 'display' ? '/settings/display' : '/settings/projects')}
+          activeTab={activeTab}
+          onTabChange={(id) => navigate(`/settings/${id}`)}
           tabs={[
             { id: 'projects', label: 'Projects', icon: <FolderOpen size={14} /> },
             { id: 'display', label: 'Display', icon: <Eye size={14} /> },
+            { id: 'data', label: 'Share', icon: <Share2 size={14} /> },
           ]}
         />
 
@@ -50,6 +56,7 @@ export default function SettingsView({
           <Route path="/" element={<ProjectSettingsPanel />} />
           <Route path="/projects" element={<ProjectSettingsPanel />} />
           <Route path="/display" element={<DisplaySettingsPanel />} />
+          <Route path="/data" element={<DataSettingsPanel />} />
         </Routes>
       </div>
     </>
