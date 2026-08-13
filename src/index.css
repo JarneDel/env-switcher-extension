@@ -148,6 +148,12 @@
     width: 460px;
     min-height: 600px;
   }
+  /* Same page opened as a full tab rather than the toolbar popup. */
+  html[data-view='tab'] #root {
+    width: min(560px, 100%);
+    min-height: 100dvh;
+    margin-inline: auto;
+  }
 }
 
 /* Collapse animation — managed by useCollapse hook */
