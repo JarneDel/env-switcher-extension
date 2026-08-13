@@ -27,21 +27,42 @@ jobs:
           npm run package:chrome
           npm run package:firefox
 
-      - name: Submit to stores
+      # Each store submits in its own step so that one store failing (or being
+      # locked, e.g. Chrome's ITEM_NOT_UPDATABLE while an item is pending
+      # review) can never stop the other store from being published.
+      - name: Submit to Chrome Web Store
+        id: chrome
+        continue-on-error: true
         run: |
-          npx wxt submit \
-            --chrome-zip .output/*-chrome.zip \
-            --firefox-zip .output/*-firefox.zip \
-            --firefox-sources-zip .output/*-sources.zip
+          npx wxt submit --chrome-zip .output/*-chrome.zip
         env:
-          # Chrome Credentials
           CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
           CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
           CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
           CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
 
-          # Firefox Credentials
+      - name: Submit to Firefox Add-ons
+        id: firefox
+        if: always()
+        continue-on-error: true
+        run: |
+          npx wxt submit \
+            --firefox-zip .output/*-firefox.zip \
+            --firefox-sources-zip .output/*-sources.zip
+        env:
           # Mapping your "MOZILLA" secrets to WXT's required variable names
           FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID }}
           FIREFOX_JWT_ISSUER: ${{ secrets.MOZILLA_API_KEY }}
           FIREFOX_JWT_SECRET: ${{ secrets.MOZILLA_API_SECRET }}
+
+      # Both stores have been attempted by now; surface the results and fail
+      # the job if either one did not go through.
+      - name: Report submission results
+        if: always()
+        run: |
+          echo "Chrome:  ${{ steps.chrome.outcome }}"
+          echo "Firefox: ${{ steps.firefox.outcome }}"
+          if [ "${{ steps.chrome.outcome }}" != "success" ] || [ "${{ steps.firefox.outcome }}" != "success" ]; then
+            echo "::error::At least one store submission failed - see the step logs above."
+            exit 1
+          fi
