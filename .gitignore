@@ -31,3 +31,4 @@ dist-firefox
 dist-chrome
 .wxt
 .output
+.chrome-debug-profile

@@ -9,6 +9,14 @@ export default defineConfig({
 
     imports: false,
 
+    webExt: {
+        chromiumArgs: [
+            '--remote-debugging-port=9222',
+            `--user-data-dir=${process.cwd()}/.chrome-debug-profile`,
+        ],
+        startUrls: ['https://example.com'],
+    },
+
     manifest: {
         name: 'Environment Switcher',
         version: '1.0.13',
@@ -25,6 +33,9 @@ export default defineConfig({
         },
         action: {
             default_title: 'Environment Switcher',
+        },
+        omnibox: {
+            keyword: 'env',
         },
         commands: {
             _execute_action: {

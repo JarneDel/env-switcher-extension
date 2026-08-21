@@ -1,4 +1,5 @@
 import { ExtensionStorage } from '../libs/storage.ts';
+import { Omnibox } from '../libs/omnibox.ts';
 
 class Background {
     init() {
@@ -6,6 +7,9 @@ class Background {
         browser.runtime.onInstalled.addListener(() => {
             // Environment Switcher extension installed - silently handle
         });
+
+        // Register the address bar (omnibox) keyword handler
+        new Omnibox().init();
 
         // Handle tab activation
         browser.tabs.onActivated.addListener(async (activeInfo) => {
