@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import type { Environment, ExtensionConfig, Project } from '@/types';
 import { getRandomColor, getSuggestedColorForEnvironment } from '../libs/colorUtils';
 import { validateProject, validateEnvironment, hasValidationErrors } from '../libs/validationUtils';
-import { getCurrentTabUrl, extractBaseDomain } from '../libs/urlUtils';
+import { getCurrentTabUrl, extractBaseDomain, URLUtils } from '../libs/urlUtils';
 
 export const useConfigurationState = (config: ExtensionConfig) => {
   const [editingProjects, setEditingProjects] = useState<Project[]>(
@@ -24,19 +24,31 @@ export const useConfigurationState = (config: ExtensionConfig) => {
     getCurrentTabUrl().then(setCurrentTabUrl).catch(() => { /* ignore */ });
   }, []);
 
+  const currentEnvironment = (currentTabUrl && URLUtils.detectCurrentEnvironment(currentTabUrl, editingEnvironments))
+    || (config.currentEnvironment ? editingEnvironments.find(e => e.id === config.currentEnvironment) : undefined);
+  const currentProjectId = currentEnvironment?.projectId;
+
   // Notify background script when environments change
   const notifyEnvironmentChange = async () => {
     try {
-      await browser.runtime.sendMessage({ action: 'environmentChanged' });
+      if (typeof browser !== 'undefined' && browser.runtime?.sendMessage) {
+        await browser.runtime.sendMessage({ action: 'environmentChanged' });
+      }
     } catch (error) {
       console.error('Failed to notify background of environment change:', error);
     }
   };
 
-  const handleProjectChange = (index: number, field: keyof Project, value: string) => {
-    const updated = [...editingProjects];
-    updated[index] = { ...updated[index], [field]: value };
-    setEditingProjects(updated);
+  const handleProjectChange = (indexOrId: number | string, field: keyof Project, value: string) => {
+    setEditingProjects(prev => {
+      const index = typeof indexOrId === 'number'
+        ? indexOrId
+        : prev.findIndex(p => p.id === indexOrId);
+      if (index === -1 || !prev[index]) return prev;
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
 
     // If color changed, notify background to refresh favicons
     if (field === 'color') {
@@ -51,20 +63,22 @@ export const useConfigurationState = (config: ExtensionConfig) => {
       description: '',
       color: getRandomColor()
     };
-    setEditingProjects([...editingProjects, newProject]);
+    setEditingProjects(prev => [...prev, newProject]);
 
     // Mark as newly added for auto-expand
     setNewlyAddedProjects(prev => new Set(prev).add(newProject.id));
   };
 
-  const removeProject = (index: number) => {
-    const projectId = editingProjects[index].id;
-
-    // Remove project
-    setEditingProjects(editingProjects.filter((_, i) => i !== index));
-
-    // Remove all environments belonging to this project
-    setEditingEnvironments(editingEnvironments.filter(env => env.projectId !== projectId));
+  const removeProject = (indexOrId: number | string) => {
+    setEditingProjects(prev => {
+      const index = typeof indexOrId === 'number'
+        ? indexOrId
+        : prev.findIndex(p => p.id === indexOrId);
+      if (index === -1 || !prev[index]) return prev;
+      const projectId = prev[index].id;
+      setEditingEnvironments(prevEnvs => prevEnvs.filter(env => env.projectId !== projectId));
+      return prev.filter((_, i) => i !== index);
+    });
 
     // Notify background to refresh favicons
     notifyEnvironmentChange();
@@ -83,8 +97,8 @@ export const useConfigurationState = (config: ExtensionConfig) => {
   };
 
   const addEnvironment = (projectId?: string) => {
-    // Use the first project if available, or create a default project
-    let targetProjectId = projectId;
+    // Use the current project if available, or first project, or create a default project
+    let targetProjectId = projectId || (currentProjectId && editingProjects.some(p => p.id === currentProjectId) ? currentProjectId : undefined);
     if (!targetProjectId && editingProjects.length > 0) {
       targetProjectId = editingProjects[0].id;
     } else if (!targetProjectId) {
@@ -95,7 +109,7 @@ export const useConfigurationState = (config: ExtensionConfig) => {
         description: 'Default project for environments',
         color: getRandomColor()
       };
-      setEditingProjects([...editingProjects, defaultProject]);
+      setEditingProjects(prev => [...prev, defaultProject]);
       setNewlyAddedProjects(prev => new Set(prev).add(defaultProject.id));
       targetProjectId = defaultProject.id;
     }
@@ -107,7 +121,7 @@ export const useConfigurationState = (config: ExtensionConfig) => {
       color: getRandomColor(),
       projectId: targetProjectId!
     };
-    setEditingEnvironments([...editingEnvironments, newEnv]);
+    setEditingEnvironments(prev => [...prev, newEnv]);
 
     // Mark as newly added for auto-expand
     setNewlyAddedEnvironments(prev => new Set(prev).add(newEnv.id));
@@ -125,8 +139,8 @@ export const useConfigurationState = (config: ExtensionConfig) => {
       const currentUrl = await getCurrentTabUrl();
       const baseDomain = extractBaseDomain(currentUrl);
 
-      // Use the first project if available, or create a default project
-      let targetProjectId = projectId;
+      // Use the current project if available, or first project, or create a default project
+      let targetProjectId = projectId || (currentProjectId && editingProjects.some(p => p.id === currentProjectId) ? currentProjectId : undefined);
       if (!targetProjectId && editingProjects.length > 0) {
         targetProjectId = editingProjects[0].id;
       } else if (!targetProjectId) {
@@ -137,7 +151,7 @@ export const useConfigurationState = (config: ExtensionConfig) => {
           description: 'Default project for environments',
           color: getRandomColor()
         };
-        setEditingProjects([...editingProjects, defaultProject]);
+        setEditingProjects(prev => [...prev, defaultProject]);
         setNewlyAddedProjects(prev => new Set(prev).add(defaultProject.id));
         targetProjectId = defaultProject.id;
       }
@@ -248,6 +262,8 @@ export const useConfigurationState = (config: ExtensionConfig) => {
     clearNewlyAddedStatus,
     configurationPanel,
     currentTabUrl,
+    currentProjectId,
+    currentEnvironment,
     handleProjectChange,
     addProject,
     removeProject,

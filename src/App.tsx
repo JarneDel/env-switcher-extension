@@ -29,10 +29,12 @@ function App() {
       loadInitialData();
     };
 
-    browser.tabs.onUpdated.addListener(handleTabUpdate);
-    return () => {
-      browser.tabs.onUpdated.removeListener(handleTabUpdate);
-    };
+    if (browser.tabs?.onUpdated) {
+      browser.tabs.onUpdated.addListener(handleTabUpdate);
+      return () => {
+        browser.tabs.onUpdated.removeListener(handleTabUpdate);
+      };
+    }
   }, []);
 
   // Ask the background to refresh stale statuses (throttled there) and keep
@@ -70,6 +72,7 @@ function App() {
 
   const getCurrentTabInfo = async (extensionConfig: ExtensionConfig) => {
     try {
+      if (!browser.tabs?.query) return null;
       const tabs = await browser.tabs.query({ active: true, currentWindow: true });
       const activeTab = tabs[0];
 
@@ -107,6 +110,7 @@ function App() {
     if (projectEnvs.length === 0) return [];
 
     try {
+      if (!browser.history?.search) return [];
       const seen = new Set<string>();
       const allItems: VisitedPage[] = [];
 

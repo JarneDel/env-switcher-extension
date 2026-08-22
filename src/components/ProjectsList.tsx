@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Search, Plus } from 'lucide-react';
 import { Button } from './ui/button';
 import ProjectListItem from './ProjectListItem';
@@ -13,14 +13,26 @@ const ProjectsList: React.FC = () => {
     validateProject,
     validateEnvironment,
     getEnvironmentsByProject,
+    currentProjectId,
   } = useConfiguration();
 
-  const filteredProjects = searchQuery.trim()
-    ? editingProjects.filter(p =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (p.description || '').toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : editingProjects;
+  const filteredProjects = useMemo(() => {
+    return searchQuery.trim()
+      ? editingProjects.filter(p =>
+          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (p.description || '').toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : editingProjects;
+  }, [editingProjects, searchQuery]);
+
+  const sortedProjects = useMemo(() => {
+    if (!currentProjectId) return filteredProjects;
+    const currentIndex = filteredProjects.findIndex(p => p.id === currentProjectId);
+    if (currentIndex <= 0) return filteredProjects;
+    const currentProj = filteredProjects[currentIndex];
+    const rest = filteredProjects.filter((_, i) => i !== currentIndex);
+    return [currentProj, ...rest];
+  }, [filteredProjects, currentProjectId]);
 
   return (
     <div className="flex flex-col gap-0">
@@ -42,22 +54,23 @@ const ProjectsList: React.FC = () => {
 
       {/* list */}
       <div className="flex flex-col gap-5 px-2 py-4">
-        {filteredProjects.length === 0 && searchQuery ? (
+        {sortedProjects.length === 0 && searchQuery ? (
           <p className="text-muted-foreground text-sm text-center py-4">No projects match "{searchQuery}"</p>
-        ) : filteredProjects.length === 0 ? (
+        ) : sortedProjects.length === 0 ? (
           <p className="text-muted-foreground text-sm text-center py-4">No projects yet. Add one above.</p>
         ) : (
-          filteredProjects.map((project) => {
+          sortedProjects.map((project) => {
             const environments = getEnvironmentsByProject(project.id);
-            const originalIndex = editingProjects.indexOf(project);
+            const originalIndex = editingProjects.findIndex(p => p.id === project.id);
             return (
               <ProjectListItem
                 key={project.id}
                 project={project}
-                projectIndex={originalIndex}
+                projectIndex={originalIndex >= 0 ? originalIndex : editingProjects.indexOf(project)}
                 environments={environments}
                 validateProject={validateProject}
                 validateEnvironment={validateEnvironment}
+                isCurrent={project.id === currentProjectId}
               />
             );
           })

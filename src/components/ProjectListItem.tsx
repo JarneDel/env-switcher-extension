@@ -17,6 +17,7 @@ interface Props {
   environments: Environment[];
   validateProject: (project: Project) => string[];
   validateEnvironment: (env: Environment) => string[];
+  isCurrent?: boolean;
 }
 
 const ProjectListItem: React.FC<Props> = ({
@@ -25,6 +26,7 @@ const ProjectListItem: React.FC<Props> = ({
   environments,
   validateProject,
   validateEnvironment,
+  isCurrent = false,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -106,11 +108,16 @@ const ProjectListItem: React.FC<Props> = ({
           />
         ) : (
           <span
-            className="text-sm text-foreground flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap cursor-text"
+            className="text-sm text-foreground flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap cursor-text flex items-center gap-1.5"
             onDoubleClick={() => setIsEditingName(true)}
             title="Double-click to edit"
           >
-            {capitalize(project.name) || `Project #${projectIndex + 1}`}
+            <span className="truncate">{capitalize(project.name) || `Project #${projectIndex + 1}`}</span>
+            {isCurrent && (
+              <Badge variant="outline" className="text-[10px] h-4 px-1.5 text-primary border-primary/30 bg-primary/5 shrink-0 font-normal">
+                current
+              </Badge>
+            )}
           </span>
         )}
 

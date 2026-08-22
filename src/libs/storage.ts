@@ -6,12 +6,52 @@ export const GLOBAL_CONFIG_KEY = 'config_global';
 export const PROJ_ENVS_PREFIX = 'proj_envs_';
 export const LEGACY_CONFIG_KEY = 'extensionConfig';
 
+const fallbackStorage = {
+  get: async (key: any) => {
+    try {
+      if (key === null) {
+        const res: Record<string, any> = {};
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k) {
+            try { res[k] = JSON.parse(localStorage.getItem(k) || ''); } catch { res[k] = localStorage.getItem(k); }
+          }
+        }
+        return res;
+      }
+      if (typeof key === 'string') {
+        const item = localStorage.getItem(key);
+        return item ? { [key]: JSON.parse(item) } : {};
+      }
+      return {};
+    } catch {
+      return {};
+    }
+  },
+  set: async (items: Record<string, any>) => {
+    try {
+      for (const [k, v] of Object.entries(items)) {
+        localStorage.setItem(k, JSON.stringify(v));
+      }
+    } catch { /* ignore */ }
+  },
+  remove: async (keys: any) => {
+    try {
+      const arr = Array.isArray(keys) ? keys : [keys];
+      arr.forEach(k => localStorage.removeItem(k));
+    } catch { /* ignore */ }
+  }
+};
+
 // Choose between sync and local storage
 const getStorageArea = (sync = true): Browser.Storage.StorageArea => {
-  if (sync && browser.storage.sync) {
+  if (sync && typeof browser !== 'undefined' && browser.storage?.sync) {
     return browser.storage.sync;
   }
-  return browser.storage.local;
+  if (typeof browser !== 'undefined' && browser.storage?.local) {
+    return browser.storage.local;
+  }
+  return fallbackStorage as any;
 };
 
 export const loadConfig = async (sync = true): Promise<StoredConfig> => {

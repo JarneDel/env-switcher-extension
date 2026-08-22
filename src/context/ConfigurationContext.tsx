@@ -9,9 +9,9 @@ interface ConfigurationContextType {
   newlyAddedEnvironments: Set<string>;
   clearNewlyAddedStatus: (projectId?: string, environmentId?: string) => void;
   configurationPanel: React.RefObject<HTMLDivElement | null>;
-  handleProjectChange: (index: number, field: keyof Project, value: string) => void;
+  handleProjectChange: (indexOrId: number | string, field: keyof Project, value: string) => void;
   addProject: () => void;
-  removeProject: (index: number) => void;
+  removeProject: (indexOrId: number | string) => void;
   handleEnvironmentChange: (envId: string, field: keyof Environment, value: string) => void;
   addEnvironment: (projectId?: string) => void;
   addCurrentDomain: (projectId?: string) => Promise<void>;
@@ -22,6 +22,8 @@ interface ConfigurationContextType {
   getEnvironmentsByProject: (projectId: string) => Environment[];
   buildUpdatedConfig: () => ExtensionConfig;
   currentTabUrl: string | undefined;
+  currentProjectId?: string;
+  currentEnvironment?: Environment;
 }
 
 const ConfigurationContext = createContext<ConfigurationContextType | undefined>(undefined);
