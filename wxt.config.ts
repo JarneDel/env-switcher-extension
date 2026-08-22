@@ -9,11 +9,19 @@ export default defineConfig({
 
     imports: false,
 
+    webExt: {
+        chromiumArgs: [
+            '--remote-debugging-port=9222',
+            `--user-data-dir=${process.cwd()}/.chrome-debug-profile`,
+        ],
+        startUrls: ['https://example.com'],
+    },
+
     manifest: {
         name: 'Environment Switcher',
-        version: '1.0.12',
+        version: '1.0.14',
         description: 'Switch between different environments and languages with ease',
-        permissions: ['storage', 'activeTab', 'tabs', 'scripting', 'history'],
+        permissions: ['storage', 'activeTab', 'tabs', 'scripting', 'history', 'alarms', 'contextMenus'],
         host_permissions: ['http://*/*', 'https://*/*'],
         icons: {
             '16': 'icon16.png',
@@ -25,6 +33,9 @@ export default defineConfig({
         },
         action: {
             default_title: 'Environment Switcher',
+        },
+        omnibox: {
+            keyword: 'env',
         },
         commands: {
             _execute_action: {
@@ -65,6 +76,10 @@ export default defineConfig({
         resolve: {
             alias: {
                 '@': path.resolve(__dirname, './src'),
+                'react': 'preact/compat',
+                'react-dom': 'preact/compat',
+                'react-dom/client': 'preact/compat',
+                'react/jsx-runtime': 'preact/jsx-runtime',
             },
         },
         build: {

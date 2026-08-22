@@ -1,9 +1,9 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { HashRouter } from 'react-router-dom'
+import { RouterProvider } from '@/shared/router'
 import '@/index.css'
-import App from '@/App.tsx'
-import { isRunningInTab } from '@/libs/extensionContext'
+import App from './App'
+import { isRunningInTab } from '@/shared/extension'
 
 // The same page serves the toolbar popup and the full-tab view; the tab gets a
 // roomier, centred layout instead of the fixed popup width.
@@ -13,8 +13,8 @@ isRunningInTab().then((inTab) => {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <HashRouter>
+    <RouterProvider>
       <App />
-    </HashRouter>
+    </RouterProvider>
   </StrictMode>,
 )
