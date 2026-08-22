@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AlertTriangle, Check, Copy, Download, ExternalLink, FileUp, Upload } from 'lucide-react';
 import { Button } from '@/shared/ui';
+import { cn } from '@/shared/utils';
 import { loadConfig, saveConfig, type StoredConfig } from '../services/storage';
 import { isRunningInTab, openInTab } from '@/shared/extension';
 import {
@@ -199,40 +200,39 @@ const DataSettingsPanel: React.FC = () => {
           Load a configuration that was exported from Environment Switcher.
         </p>
 
-        <div className="space-y-2 mb-3">
-          <label className="flex items-start gap-2 text-sm font-medium text-foreground cursor-pointer">
-            <input
-              type="radio"
-              name="import-mode"
-              checked={importMode === 'merge'}
-              onChange={() => { setImportMode('merge'); setConfirmingReplace(false); }}
-              className="m-0 mt-0.5"
-            />
-            <span>
+        {/* Mode segmented control: [ Merge | Replace ] */}
+        <div className="mb-3">
+          <div className="inline-flex p-0.5 rounded-lg bg-muted/80 border border-border">
+            <button
+              type="button"
+              onClick={() => { setImportMode('merge'); setConfirmingReplace(false); }}
+              className={cn(
+                'px-3.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer',
+                importMode === 'merge'
+                  ? 'bg-card text-foreground shadow-xs font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
               Merge
-              <span className="block text-[0.8125rem] font-normal text-muted-foreground leading-[1.4]">
-                Add new projects and environments, keep everything you already have. Duplicate URLs
-                are skipped and display settings stay unchanged.
-              </span>
-            </span>
-          </label>
-
-          <label className="flex items-start gap-2 text-sm font-medium text-foreground cursor-pointer">
-            <input
-              type="radio"
-              name="import-mode"
-              checked={importMode === 'replace'}
-              onChange={() => { setImportMode('replace'); setConfirmingReplace(false); }}
-              className="m-0 mt-0.5"
-            />
-            <span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setImportMode('replace'); setConfirmingReplace(false); }}
+              className={cn(
+                'px-3.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer',
+                importMode === 'replace'
+                  ? 'bg-card text-foreground shadow-xs font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
               Replace
-              <span className="block text-[0.8125rem] font-normal text-muted-foreground leading-[1.4]">
-                Discard the current configuration and use the imported one, including its display
-                settings.
-              </span>
-            </span>
-          </label>
+            </button>
+          </div>
+          <p className="mt-1.5 text-[0.8125rem] text-muted-foreground leading-[1.4]">
+            {importMode === 'merge'
+              ? 'Add new projects and environments, keeping everything you already have. Duplicate URLs are skipped and display settings stay unchanged.'
+              : 'Discard the current configuration and overwrite with the imported one, including its display settings.'}
+          </p>
         </div>
 
         <input
