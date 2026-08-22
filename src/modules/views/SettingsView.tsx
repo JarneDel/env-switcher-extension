@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate, useLocation } from '@/shared/router';
 import { Eye, FolderOpen, Share2 } from 'lucide-react';
 import { Button, TabStrip } from '@/shared/ui';
@@ -16,6 +17,34 @@ export default function SettingsView({
 }: SettingsViewProps) {
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        const activeEl = document.activeElement as HTMLElement | null;
+        const inInput = activeEl && (
+          activeEl.tagName === 'INPUT' ||
+          activeEl.tagName === 'TEXTAREA' ||
+          activeEl.tagName === 'SELECT' ||
+          activeEl.isContentEditable
+        );
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (inInput) {
+          activeEl.blur();
+          return;
+        }
+
+        onSettingsChange();
+        navigate(isConfigured ? '/' : '/setup');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isConfigured, navigate, onSettingsChange]);
 
   const activeTab = location.pathname === '/settings/display'
     ? 'display'

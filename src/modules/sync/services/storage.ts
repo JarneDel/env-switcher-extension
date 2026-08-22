@@ -54,6 +54,37 @@ const getStorageArea = (sync = true): Browser.Storage.StorageArea => {
   return fallbackStorage as any;
 };
 
+// ── in-memory cache ───────────────────────────────────────────────────────────
+// loadConfig() reads and deserialises the whole storage area. That runs on hot
+// paths (every tab switch, every omnibox keystroke, every favicon refresh), so
+// each extension context keeps its own copy and drops it as soon as the stored
+// data actually changes — including changes made by another context.
+
+interface CacheEntry {
+  config: StoredConfig;
+  /** Every key present in the area at the time of the read. */
+  keys: Set<string>;
+}
+
+const configCache = new Map<boolean, CacheEntry>();
+
+let cacheInvalidationWired = false;
+const wireCacheInvalidation = (): void => {
+  if (cacheInvalidationWired) return;
+  cacheInvalidationWired = true;
+  try {
+    browser.storage.onChanged.addListener(() => configCache.clear());
+  } catch {
+    // storage.onChanged is unavailable (e.g. the localStorage fallback) — the
+    // cache then only lives for as long as nothing writes through this module.
+  }
+};
+
+/** Drop the cached config for every area. Exported for tests and manual resets. */
+export const invalidateConfigCache = (): void => {
+  configCache.clear();
+};
+
 export const loadConfig = async (sync = true): Promise<StoredConfig> => {
   const defaultStoredConfig: StoredConfig = {
     projects: [],
@@ -71,6 +102,11 @@ export const loadConfig = async (sync = true): Promise<StoredConfig> => {
     healthChecksEnabled: true,
   };
 
+  wireCacheInvalidation();
+
+  const cached = configCache.get(sync);
+  if (cached) return cached.config;
+
   try {
     const storage = getStorageArea(sync);
     const allData = await storage.get(null);
@@ -78,6 +114,12 @@ export const loadConfig = async (sync = true): Promise<StoredConfig> => {
     if (!allData || typeof allData !== 'object') {
       return defaultStoredConfig;
     }
+
+    const keys = new Set(Object.keys(allData));
+    const remember = (config: StoredConfig): StoredConfig => {
+      configCache.set(sync, { config, keys });
+      return config;
+    };
 
     // 1. Check if new format (config_global) exists
     if (allData[GLOBAL_CONFIG_KEY] && typeof allData[GLOBAL_CONFIG_KEY] === 'object') {
@@ -105,7 +147,7 @@ export const loadConfig = async (sync = true): Promise<StoredConfig> => {
         }
       }
 
-      return {
+      return remember({
         projects,
         environments,
         autoDetectLanguages: typeof global.autoDetectLanguages === 'boolean' ? global.autoDetectLanguages : true,
@@ -121,13 +163,13 @@ export const loadConfig = async (sync = true): Promise<StoredConfig> => {
         hasVisitedDisplaySettings: typeof global.hasVisitedDisplaySettings === 'boolean' ? global.hasVisitedDisplaySettings : false,
         recentsProjectScoped: typeof global.recentsProjectScoped === 'boolean' ? global.recentsProjectScoped : false,
         healthChecksEnabled: typeof global.healthChecksEnabled === 'boolean' ? global.healthChecksEnabled : true,
-      };
+      });
     }
 
     // 2. Check legacy format (extensionConfig) for automatic migration
     const legacyConfig = allData[LEGACY_CONFIG_KEY];
     if (legacyConfig && typeof legacyConfig === 'object') {
-      return {
+      return remember({
         projects: Array.isArray(legacyConfig.projects) ? legacyConfig.projects : [],
         environments: Array.isArray(legacyConfig.environments) ? legacyConfig.environments : [],
         autoDetectLanguages: typeof legacyConfig.autoDetectLanguages === 'boolean' ? legacyConfig.autoDetectLanguages : true,
@@ -143,10 +185,10 @@ export const loadConfig = async (sync = true): Promise<StoredConfig> => {
         hasVisitedDisplaySettings: typeof legacyConfig.hasVisitedDisplaySettings === 'boolean' ? legacyConfig.hasVisitedDisplaySettings : false,
         recentsProjectScoped: typeof legacyConfig.recentsProjectScoped === 'boolean' ? legacyConfig.recentsProjectScoped : false,
         healthChecksEnabled: typeof legacyConfig.healthChecksEnabled === 'boolean' ? legacyConfig.healthChecksEnabled : true,
-      };
+      });
     }
 
-    return defaultStoredConfig;
+    return remember(defaultStoredConfig);
   } catch (error) {
     console.error('Failed to load config:', error);
     return defaultStoredConfig;
@@ -191,15 +233,17 @@ export const saveConfig = async (config: StoredConfig, sync = true): Promise<voi
       payload[`${PROJ_ENVS_PREFIX}unassigned`] = unassignedEnvs;
     }
 
-    // Identify keys to remove (deleted projects and legacy single key)
-    const allStored = await storage.get(null);
+    // Identify keys to remove (deleted projects and legacy single key). The key
+    // set is usually already known from the preceding loadConfig(), which saves
+    // a second full read of the area on the common save path.
+    const storedKeys = configCache.get(sync)?.keys ?? new Set(Object.keys(await storage.get(null)));
     const keysToRemove: string[] = [];
 
-    if (LEGACY_CONFIG_KEY in allStored) {
+    if (storedKeys.has(LEGACY_CONFIG_KEY)) {
       keysToRemove.push(LEGACY_CONFIG_KEY);
     }
 
-    for (const key of Object.keys(allStored)) {
+    for (const key of storedKeys) {
       if (key.startsWith(PROJ_ENVS_PREFIX)) {
         const projId = key.slice(PROJ_ENVS_PREFIX.length);
         if (projId !== 'unassigned' && !activeProjectIds.has(projId)) {
@@ -215,8 +259,42 @@ export const saveConfig = async (config: StoredConfig, sync = true): Promise<voi
     }
 
     await storage.set(payload);
+    configCache.delete(sync);
   } catch (error) {
+    configCache.delete(sync);
     console.error('Failed to save config:', error);
+    throw error;
+  }
+};
+
+/**
+ * Write a handful of fields on the global config blob without rewriting the
+ * per-project environment keys. Only fields that live in the global blob may be
+ * patched this way (i.e. anything except `environments`).
+ *
+ * Falls back to a full save when no global blob exists yet, so a fresh install
+ * or a pre-migration legacy config still gets written out correctly.
+ */
+export const updateGlobalConfig = async (
+  patch: Partial<Omit<StoredConfig, 'environments'>>,
+  sync = true
+): Promise<void> => {
+  try {
+    const storage = getStorageArea(sync);
+    const data = await storage.get(GLOBAL_CONFIG_KEY);
+    const current = data?.[GLOBAL_CONFIG_KEY];
+
+    if (!current || typeof current !== 'object') {
+      const config = await loadConfig(sync);
+      await saveConfig({ ...config, ...patch }, sync);
+      return;
+    }
+
+    await storage.set({ [GLOBAL_CONFIG_KEY]: { ...current, ...patch } });
+    configCache.delete(sync);
+  } catch (error) {
+    configCache.delete(sync);
+    console.error('Failed to update config:', error);
     throw error;
   }
 };
@@ -236,9 +314,7 @@ export class ExtensionStorage {
   }
 
   static async setCurrentEnvironment(envId: string, sync = true): Promise<void> {
-    const config = await this.getConfig(sync);
-    config.currentEnvironment = envId;
-    await this.saveConfig(config, sync);
+    await updateGlobalConfig({ currentEnvironment: envId }, sync);
   }
 
   static async isConfigured(sync = true): Promise<boolean> {

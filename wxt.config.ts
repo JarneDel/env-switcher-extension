@@ -21,7 +21,8 @@ export default defineConfig({
         name: 'Environment Switcher',
         version: '1.0.15',
         description: 'Switch between different environments and languages with ease',
-        permissions: ['storage', 'activeTab', 'tabs', 'scripting', 'history'],
+        permissions: ['storage', 'activeTab', 'scripting'],
+        optional_permissions: ['history'],
         host_permissions: ['http://*/*', 'https://*/*'],
         icons: {
             '16': 'icon16.png',

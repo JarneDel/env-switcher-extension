@@ -14,6 +14,8 @@ interface MainViewProps {
   visitedPages: VisitedPage[];
   favorites: FavoritePage[];
   healthMap?: HealthMap;
+  hasHistoryPermission?: boolean;
+  onRequestHistoryPermission?: () => void;
   onEnvironmentSwitch: (env: Environment) => void;
   onEnvironmentSwitchNewTab: (env: Environment) => void;
   onLanguageSwitch: (lang: LanguageOption) => void;
@@ -31,6 +33,8 @@ export default function MainView({
   visitedPages,
   favorites,
   healthMap,
+  hasHistoryPermission,
+  onRequestHistoryPermission,
   onEnvironmentSwitch,
   onEnvironmentSwitchNewTab,
   onLanguageSwitch,
@@ -68,6 +72,7 @@ export default function MainView({
       // Escape closes help overlay first
       if (e.key === 'Escape' && showHelp) {
         e.preventDefault();
+        e.stopPropagation();
         setShowHelp(false);
         return;
       }
@@ -208,7 +213,7 @@ export default function MainView({
           {!bookmarksEnabled || activeTab === 'envs' ? (
             <>
               <EnvironmentSwitcher
-                environments={config?.environments || []}
+                environments={scopedEnvironments}
                 projects={config?.projects || []}
                 currentEnvironment={currentTab?.currentEnvironment}
                 recentEnvironmentIds={scopedRecentEnvironmentIds}
@@ -239,6 +244,8 @@ export default function MainView({
               pages={projectPages}
               favoriteKeys={favoriteKeys}
               currentEnvironmentOrigin={currentEnvOrigin}
+              hasHistoryPermission={hasHistoryPermission}
+              onRequestHistoryPermission={onRequestHistoryPermission}
               onNavigate={onPageNavigate}
               onNavigateNewTab={onPageNavigateNewTab}
               onToggleFavorite={onToggleFavoritePage}

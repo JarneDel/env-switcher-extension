@@ -100,7 +100,15 @@ const ProjectListItem: React.FC<Props> = ({
             value={project.name}
             onChange={(e) => handleProjectChange(projectIndex, 'name', e.target.value)}
             onBlur={() => setIsEditingName(false)}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') setIsEditingName(false); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                setIsEditingName(false);
+              } else if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsEditingName(false);
+              }
+            }}
             placeholder="Project name"
             className="h-7 flex-1 text-xs"
           />

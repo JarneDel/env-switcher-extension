@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Routes, Route, useNavigate, useLocation } from '@/shared/router';
 import type { Environment, TabInfo, ExtensionConfig, LanguageOption, VisitedPage, FavoritePage, HealthMap } from '@/types';
 import { ExtensionStorage } from '@/modules/sync';
@@ -7,6 +7,8 @@ import { HEALTH_STORAGE_KEY, loadHealthMap } from '@/modules/health';
 import { HistoryService } from '@/modules/pages';
 import { MainView, SettingsView, SetupWelcome } from '@/modules/views';
 
+const MAX_RECENTS = 5;
+
 function App() {
   const [config, setConfig] = useState<ExtensionConfig | null>(null);
   const [currentTab, setCurrentTab] = useState<TabInfo | null>(null);
@@ -14,17 +16,24 @@ function App() {
   const [isConfigured, setIsConfigured] = useState(false);
 
   const [visitedPages, setVisitedPages] = useState<VisitedPage[]>([]);
+  const [hasHistoryPermission, setHasHistoryPermission] = useState<boolean>(true);
   const [healthMap, setHealthMap] = useState<HealthMap>({});
 
   const navigate = useNavigate();
   const location = useLocation();
   const isInitialMount = useRef(true);
+  const activeTabId = useRef<number | null>(null);
 
   useEffect(() => {
     loadInitialData();
 
-    // Listen for tab updates to refresh data when URL changes
-    const handleTabUpdate = () => {
+    // Refresh when the tab this popup is acting on actually navigates.
+    // Without the id and url checks this fired for every update event on every
+    // tab in the browser, and each one re-ran a full config read, a tabs query
+    // and a history search.
+    const handleTabUpdate = (tabId: number, changeInfo: { url?: string }) => {
+      if (!changeInfo.url) return;
+      if (activeTabId.current !== null && tabId !== activeTabId.current) return;
       loadInitialData();
     };
 
@@ -82,6 +91,7 @@ function App() {
       setIsConfigured(configured);
 
       const activeTab = tabs && tabs[0];
+      activeTabId.current = typeof activeTab?.id === 'number' ? activeTab.id : null;
       let tabInfo: TabInfo | null = null;
 
       if (activeTab?.url) {
@@ -109,8 +119,14 @@ function App() {
 
         // Async non-blocking history loading via HistoryService (only when bookmarks feature is enabled)
         if (currentEnv && extensionConfig.bookmarksEnabled) {
-          HistoryService.loadProjectHistory(extensionConfig.environments, currentEnv.projectId)
-            .then(setVisitedPages)
+          HistoryService.hasPermission()
+            .then(hasPerm => {
+              setHasHistoryPermission(hasPerm);
+              if (hasPerm) {
+                return HistoryService.loadProjectHistory(extensionConfig.environments, currentEnv.projectId)
+                  .then(setVisitedPages);
+              }
+            })
             .catch(() => {});
         }
       }
@@ -122,17 +138,16 @@ function App() {
     }
   };
 
-  const MAX_RECENTS = 5;
 
-  const addToRecents = async (envId: string, currentConfig: ExtensionConfig) => {
+  const addToRecents = useCallback(async (envId: string, currentConfig: ExtensionConfig) => {
     const current = currentConfig.recentEnvironmentIds || [];
     const updated = [envId, ...current.filter(id => id !== envId)].slice(0, MAX_RECENTS);
     const newConfig = { ...currentConfig, recentEnvironmentIds: updated };
     setConfig(newConfig);
     await ExtensionStorage.saveConfig(newConfig);
-  };
+  }, []);
 
-  const handleToggleFavoritePage = async (page: VisitedPage) => {
+  const handleToggleFavoritePage = useCallback(async (page: VisitedPage) => {
     if (!config) return;
     let pathname: string;
     try { pathname = new URL(page.url).pathname; } catch { return; }
@@ -144,17 +159,17 @@ function App() {
     const newConfig = { ...config, favorites: updated };
     setConfig(newConfig);
     await ExtensionStorage.saveConfig(newConfig);
-  };
+  }, [config]);
 
-  const handleRemoveFavorite = async (key: string) => {
+  const handleRemoveFavorite = useCallback(async (key: string) => {
     if (!config) return;
     const favorites = (config.favorites || []).filter(f => f.key !== key);
     const newConfig = { ...config, favorites };
     setConfig(newConfig);
     await ExtensionStorage.saveConfig(newConfig);
-  };
+  }, [config]);
 
-  const handleFavoriteCurrentPage = async () => {
+  const handleFavoriteCurrentPage = useCallback(async () => {
     if (!currentTab?.url || !currentTab?.currentEnvironment) return;
     try {
       const u = new URL(currentTab.url);
@@ -171,9 +186,9 @@ function App() {
       };
       await handleToggleFavoritePage(page);
     } catch { /* skip invalid URLs */ }
-  };
+  }, [currentTab, visitedPages, handleToggleFavoritePage]);
 
-  const handleEnvironmentSwitch = async (targetEnv: Environment) => {
+  const handleEnvironmentSwitch = useCallback(async (targetEnv: Environment) => {
     if (!currentTab) return;
 
     try {
@@ -192,9 +207,9 @@ function App() {
     } catch (error) {
       console.error('Error switching environment:', error);
     }
-  };
+  }, [currentTab, config, addToRecents]);
 
-  const handleEnvironmentSwitchNewTab = async (targetEnv: Environment) => {
+  const handleEnvironmentSwitchNewTab = useCallback(async (targetEnv: Environment) => {
     if (!currentTab) return;
 
     try {
@@ -209,9 +224,9 @@ function App() {
     } catch (error) {
       console.error('Error opening environment in new tab:', error);
     }
-  };
+  }, [currentTab, config, addToRecents]);
 
-  const handleLanguageSwitch = async (language: LanguageOption) => {
+  const handleLanguageSwitch = useCallback(async (language: LanguageOption) => {
     if (!currentTab) return;
 
     try {
@@ -222,9 +237,9 @@ function App() {
     } catch (error) {
       console.error('Error switching language:', error);
     }
-  };
+  }, [currentTab]);
 
-  const handlePageNavigate = async (url: string) => {
+  const handlePageNavigate = useCallback(async (url: string) => {
     try {
       const tabs = await browser.tabs.query({ active: true, currentWindow: true });
       if (tabs[0] && typeof tabs[0].id === 'number') {
@@ -233,15 +248,31 @@ function App() {
     } catch (error) {
       console.error('Error navigating to page:', error);
     }
-  };
+  }, []);
 
-  const handlePageNavigateNewTab = async (url: string) => {
+  const handlePageNavigateNewTab = useCallback(async (url: string) => {
     try {
       await browser.tabs.create({ url });
     } catch (error) {
       console.error('Error opening page in new tab:', error);
     }
-  };
+  }, []);
+
+  const handleRequestHistoryPermission = useCallback(async () => {
+    try {
+      const granted = await HistoryService.requestPermission();
+      setHasHistoryPermission(granted);
+      if (granted && currentTab?.currentEnvironment && config?.bookmarksEnabled) {
+        const pages = await HistoryService.loadProjectHistory(
+          config.environments,
+          currentTab.currentEnvironment.projectId
+        );
+        setVisitedPages(pages);
+      }
+    } catch {
+      // silently handle
+    }
+  }, [currentTab, config]);
 
   const handleSettingsChange = () => {
     navigate('/');
@@ -288,6 +319,8 @@ function App() {
               visitedPages={visitedPages}
               favorites={config?.favorites || []}
               healthMap={config?.healthChecksEnabled === false ? undefined : healthMap}
+              hasHistoryPermission={hasHistoryPermission}
+              onRequestHistoryPermission={handleRequestHistoryPermission}
               onEnvironmentSwitch={handleEnvironmentSwitch}
               onEnvironmentSwitchNewTab={handleEnvironmentSwitchNewTab}
               onLanguageSwitch={handleLanguageSwitch}

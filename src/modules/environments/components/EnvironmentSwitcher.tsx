@@ -33,6 +33,55 @@ function healthTitle(entry: HealthEntry): string {
   return `${status}${code}${latency} · checked ${formatAge(Date.now() - entry.lastChecked)}`;
 }
 
+interface EnvRowProps {
+  env: Environment;
+  isCurrent: boolean;
+  isHighlighted: boolean;
+  healthMap?: HealthMap;
+  onSwitch: (env: Environment) => void;
+  onSwitchNewTab: (env: Environment) => void;
+}
+
+/**
+ * Declared at module scope on purpose: defining it inside EnvironmentSwitcher
+ * made React see a new component type on every render, so every row was
+ * unmounted and rebuilt on each keystroke instead of being diffed.
+ */
+const EnvRow: React.FC<EnvRowProps> = ({ env, isCurrent, isHighlighted, healthMap, onSwitch, onSwitchNewTab }) => (
+  <button
+    data-env-row={env.id}
+    className={cn(
+      'flex items-center gap-2.5 px-4 py-2 w-full text-left border-none cursor-pointer transition-colors duration-[0.12s] text-sm',
+      isCurrent || isHighlighted
+        ? 'bg-card text-card-foreground'
+        : 'bg-transparent text-slate-300 hover:bg-card hover:text-card-foreground'
+    )}
+    onClick={() => onSwitch(env)}
+    onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onSwitchNewTab(env); } }}
+    title={`${capitalize(env.name)} · ${env.baseUrl}${isCurrent ? ' (current)' : ''} · Middle-click: open in new tab`}
+  >
+    <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: env.color }} />
+    <span className={cn('text-sm flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap', isCurrent && 'font-semibold')}>
+      {capitalize(env.name)}
+    </span>
+    {healthMap?.[env.id] && (
+      <span
+        className={cn(
+          'size-1.5 rounded-full shrink-0',
+          healthMap[env.id].status === 'up' ? 'bg-emerald-500' : 'bg-red-500'
+        )}
+        title={healthTitle(healthMap[env.id])}
+      />
+    )}
+    <span className={cn(
+      'text-xs shrink-0 max-w-32.5 overflow-hidden text-ellipsis whitespace-nowrap',
+      isCurrent ? 'text-muted-foreground' : 'text-slate-500'
+    )}>
+      {getHostname(env.baseUrl)}
+    </span>
+  </button>
+);
+
 const EnvironmentSwitcher: React.FC<Props> = ({
   environments,
   projects,
@@ -69,34 +118,28 @@ const EnvironmentSwitcher: React.FC<Props> = ({
       .filter(e => e.id !== currentEnvironment?.id);
   }, [recentEnvironmentIds, environments, currentEnvironment]);
 
-  const searchGroups = useMemo(() => {
-    if (!search.trim()) return null;
-    const fuse = new Fuse(environments, {
+  // The index depends only on the environments, so it is built once per list
+  // change rather than being rebuilt on every keystroke.
+  const fuse = useMemo(
+    () => new Fuse(currentProjectEnvs, {
       keys: ['name', { name: 'hostname', getFn: (e: Environment) => getHostname(e.baseUrl) }, 'baseUrl'],
       threshold: 0.4,
       includeScore: true,
-    });
-    const matched = fuse.search(search.trim()).map(r => r.item);
-    const groups = new Map<string, Environment[]>();
-    for (const env of matched) {
-      if (!groups.has(env.projectId)) groups.set(env.projectId, []);
-      groups.get(env.projectId)!.push(env);
-    }
-    return groups;
-  }, [search, environments]);
+    }),
+    [currentProjectEnvs]
+  );
 
-  const allMatchedEnvs = useMemo(() => {
-    if (!searchGroups) return [];
-    const result: Environment[] = [];
-    for (const envs of searchGroups.values()) result.push(...envs);
-    return result;
-  }, [searchGroups]);
+  const searchMatches = useMemo(() => {
+    if (!search.trim()) return null;
+    if (currentProjectEnvs.length === 0) return [];
+    return fuse.search(search.trim()).map(r => r.item);
+  }, [search, currentProjectEnvs, fuse]);
 
   const defaultEnvs = useMemo(
     () => [...recentEnvs, ...currentProjectEnvs],
     [recentEnvs, currentProjectEnvs]
   );
-  const navigableEnvs = searchGroups ? allMatchedEnvs : defaultEnvs;
+  const navigableEnvs = searchMatches !== null ? searchMatches : defaultEnvs;
   const activeIndex = navigableEnvs.length
     ? Math.min(highlightedIndex, navigableEnvs.length - 1)
     : 0;
@@ -116,8 +159,9 @@ const EnvironmentSwitcher: React.FC<Props> = ({
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape') {
       e.preventDefault();
-      if (search) setSearch('');
-      else (e.target as HTMLInputElement).blur();
+      e.stopPropagation();
+      setSearch('');
+      (e.target as HTMLInputElement).blur();
       return;
     }
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -153,41 +197,6 @@ const EnvironmentSwitcher: React.FC<Props> = ({
 
   if (environments.length === 0) return null;
 
-  const EnvRow = ({ env, isCurrent, isHighlighted }: { env: Environment; isCurrent: boolean; isHighlighted: boolean }) => (
-    <button
-      data-env-row={env.id}
-      className={cn(
-        'flex items-center gap-2.5 px-4 py-2 w-full text-left border-none cursor-pointer transition-colors duration-[0.12s] text-sm',
-        isCurrent || isHighlighted
-          ? 'bg-card text-card-foreground'
-          : 'bg-transparent text-slate-300 hover:bg-card hover:text-card-foreground'
-      )}
-      onClick={() => onSwitch(env)}
-      onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onSwitchNewTab(env); } }}
-      title={`${capitalize(env.name)} · ${env.baseUrl}${isCurrent ? ' (current)' : ''} · Middle-click: open in new tab`}
-    >
-      <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: env.color }} />
-      <span className={cn('text-sm flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap', isCurrent && 'font-semibold')}>
-        {capitalize(env.name)}
-      </span>
-      {healthMap?.[env.id] && (
-        <span
-          className={cn(
-            'size-1.5 rounded-full shrink-0',
-            healthMap[env.id].status === 'up' ? 'bg-emerald-500' : 'bg-red-500'
-          )}
-          title={healthTitle(healthMap[env.id])}
-        />
-      )}
-      <span className={cn(
-        'text-xs shrink-0 max-w-32.5 overflow-hidden text-ellipsis whitespace-nowrap',
-        isCurrent ? 'text-muted-foreground' : 'text-slate-500'
-      )}>
-        {getHostname(env.baseUrl)}
-      </span>
-    </button>
-  );
-
   return (
     <div className="flex flex-col h-full">
       {/* search bar */}
@@ -206,8 +215,8 @@ const EnvironmentSwitcher: React.FC<Props> = ({
 
       {/* list */}
       <div ref={listRef} className="flex flex-col flex-1 min-h-0 overflow-y-auto">
-        {searchGroups ? (
-          searchGroups.size === 0 ? (
+        {searchMatches !== null ? (
+          searchMatches.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-6 gap-2 text-center">
               <p className="text-muted-foreground text-sm">No environments match &ldquo;{search}&rdquo;</p>
               <button
@@ -220,27 +229,27 @@ const EnvironmentSwitcher: React.FC<Props> = ({
               </button>
             </div>
           ) : (
-            Array.from(searchGroups.entries()).map(([projectId, envs]) => {
-              const proj = projectMap.get(projectId);
-              return (
-                <div key={projectId} className="flex flex-col">
-                  <div
-                    className="text-[0.6875rem] font-semibold tracking-[0.07em] uppercase px-4 pt-2 pb-1"
-                    style={{ color: proj?.color || '#94a3b8' }}
-                  >
-                    {capitalize(proj?.name || 'Unknown')}
-                  </div>
-                  {envs.map(env => (
-                    <EnvRow
-                      key={env.id}
-                      env={env}
-                      isCurrent={currentEnvironment?.id === env.id}
-                      isHighlighted={highlightedEnv?.id === env.id}
-                    />
-                  ))}
+            <div className="flex flex-col">
+              {currentProject && (
+                <div
+                  className="text-[0.6875rem] font-semibold tracking-[0.07em] uppercase px-4 pt-2 pb-1"
+                  style={{ color: currentProject.color || '#94a3b8' }}
+                >
+                  {capitalize(currentProject.name)}
                 </div>
-              );
-            })
+              )}
+              {searchMatches.map(env => (
+                <EnvRow
+                  key={env.id}
+                  env={env}
+                  healthMap={healthMap}
+                  onSwitch={onSwitch}
+                  onSwitchNewTab={onSwitchNewTab}
+                  isCurrent={currentEnvironment?.id === env.id}
+                  isHighlighted={highlightedEnv?.id === env.id}
+                />
+              ))}
+            </div>
           )
         ) : (
           <>
@@ -253,6 +262,9 @@ const EnvironmentSwitcher: React.FC<Props> = ({
                   <EnvRow
                     key={env.id}
                     env={env}
+                    healthMap={healthMap}
+                    onSwitch={onSwitch}
+                    onSwitchNewTab={onSwitchNewTab}
                     isCurrent={false}
                     isHighlighted={highlightedEnv?.id === env.id}
                   />
@@ -273,6 +285,9 @@ const EnvironmentSwitcher: React.FC<Props> = ({
                   <EnvRow
                     key={env.id}
                     env={env}
+                    healthMap={healthMap}
+                    onSwitch={onSwitch}
+                    onSwitchNewTab={onSwitchNewTab}
                     isCurrent={currentEnvironment?.id === env.id}
                     isHighlighted={highlightedEnv?.id === env.id}
                   />

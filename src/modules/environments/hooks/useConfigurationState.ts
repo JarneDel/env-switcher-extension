@@ -4,6 +4,9 @@ import { getRandomColor, getSuggestedColorForEnvironment } from '@/shared/utils'
 import { validateProject, validateEnvironment, hasValidationErrors } from '../utils/validationUtils';
 import { getCurrentTabUrl, extractBaseDomain, URLUtils } from '../utils/urlUtils';
 
+/** Debounce window for the cross-tab favicon refresh broadcast. */
+const ENVIRONMENT_CHANGE_NOTIFY_DELAY_MS = 500;
+
 export const useConfigurationState = (config: ExtensionConfig) => {
   const [editingProjects, setEditingProjects] = useState<Project[]>(
     config.projects.map(project => ({ ...project }))
@@ -19,24 +22,42 @@ export const useConfigurationState = (config: ExtensionConfig) => {
   const [currentTabUrl, setCurrentTabUrl] = useState<string | undefined>(undefined);
 
   const configurationPanel = useRef<HTMLDivElement>(null);
+  const notifyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     getCurrentTabUrl().then(setCurrentTabUrl).catch(() => { /* ignore */ });
+  }, []);
+
+  // Flush any pending notification when the panel goes away.
+  useEffect(() => () => {
+    if (notifyTimer.current) clearTimeout(notifyTimer.current);
   }, []);
 
   const currentEnvironment = (currentTabUrl && URLUtils.detectCurrentEnvironment(currentTabUrl, editingEnvironments))
     || (config.currentEnvironment ? editingEnvironments.find(e => e.id === config.currentEnvironment) : undefined);
   const currentProjectId = currentEnvironment?.projectId;
 
-  // Notify background script when environments change
-  const notifyEnvironmentChange = async () => {
-    try {
-      if (typeof browser !== 'undefined' && browser.runtime?.sendMessage) {
-        await browser.runtime.sendMessage({ action: 'environmentChanged' });
+  /**
+   * Ask the background to refresh favicons across every open tab.
+   *
+   * Colour and base-URL edits fire this on each keystroke, and the background
+   * fans the message out to every tab, so it is debounced: without that, a
+   * single typed character cost one config read plus a favicon re-render in
+   * every open tab.
+   */
+  const notifyEnvironmentChange = () => {
+    if (notifyTimer.current) clearTimeout(notifyTimer.current);
+    notifyTimer.current = setTimeout(() => {
+      notifyTimer.current = null;
+      try {
+        if (typeof browser !== 'undefined' && browser.runtime?.sendMessage) {
+          void browser.runtime.sendMessage({ action: 'environmentChanged' })
+            .catch(() => { /* background may be asleep — nothing to do */ });
+        }
+      } catch (error) {
+        console.error('Failed to notify background of environment change:', error);
       }
-    } catch (error) {
-      console.error('Failed to notify background of environment change:', error);
-    }
+    }, ENVIRONMENT_CHANGE_NOTIFY_DELAY_MS);
   };
 
   const handleProjectChange = (indexOrId: number | string, field: keyof Project, value: string) => {

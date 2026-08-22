@@ -25,26 +25,44 @@ interface RouterProviderProps {
   children: ReactNode;
 }
 
-export const RouterProvider: React.FC<RouterProviderProps> = ({ initialPath = '/', children }) => {
-  const [history, setHistory] = useState<string[]>([initialPath]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+interface HistoryState {
+  entries: string[];
+  index: number;
+}
 
-  const currentPath = history[currentIndex] || '/';
+export const RouterProvider: React.FC<RouterProviderProps> = ({ initialPath = '/', children }) => {
+  // The stack and the cursor live in one piece of state so they can only ever
+  // move together. Keeping them apart meant navigate() truncated using an index
+  // captured at render time while incrementing the cursor unconditionally, so
+  // two navigate() calls in a single handler — which is what the Settings back
+  // button does, via onSettingsChange() plus its own navigate() — pushed one
+  // entry but advanced the cursor twice. The cursor then pointed past the end
+  // of the stack, every later lookup fell through to '/', and navigation
+  // silently stopped working for the rest of the session.
+  const [{ entries, index }, setHistoryState] = useState<HistoryState>({
+    entries: [initialPath],
+    index: 0,
+  });
+
+  const currentPath = entries[index] ?? '/';
 
   const navigate: NavigateFunction = (to) => {
-    if (typeof to === 'number') {
-      const nextIndex = currentIndex + to;
-      if (nextIndex >= 0 && nextIndex < history.length) {
-        setCurrentIndex(nextIndex);
+    setHistoryState((prev) => {
+      if (typeof to === 'number') {
+        const nextIndex = prev.index + to;
+        return nextIndex >= 0 && nextIndex < prev.entries.length
+          ? { ...prev, index: nextIndex }
+          : prev;
       }
-      return;
-    }
 
-    setHistory((prev) => {
-      const updated = prev.slice(0, currentIndex + 1);
-      return [...updated, to];
+      const truncated = prev.entries.slice(0, prev.index + 1);
+
+      // Navigating to the path already showing is a no-op, so paired
+      // callback+navigate call sites don't stack duplicate entries.
+      if (truncated[truncated.length - 1] === to) return prev;
+
+      return { entries: [...truncated, to], index: truncated.length };
     });
-    setCurrentIndex((prev) => prev + 1);
   };
 
   const value = {

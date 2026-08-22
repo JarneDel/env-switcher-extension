@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import Fuse from 'fuse.js';
-import { Search, ChevronRight, Star } from 'lucide-react';
+import { Search, ChevronRight, Star, History } from 'lucide-react';
+import { Button } from '@/shared/ui';
 import { cn } from '@/shared/utils';
 import type { VisitedPage } from '@/types';
 
@@ -211,6 +212,8 @@ interface Props {
   pages: VisitedPage[];
   favoriteKeys: Set<string>;
   currentEnvironmentOrigin?: string;
+  hasHistoryPermission?: boolean;
+  onRequestHistoryPermission?: () => void;
   onNavigate: (url: string) => void;
   onNavigateNewTab: (url: string) => void;
   onToggleFavorite: (page: VisitedPage) => void;
@@ -227,7 +230,17 @@ function resolvePageUrl(page: VisitedPage, origin?: string): string {
   }
 }
 
-export default function PageShortcuts({ pages, favoriteKeys, currentEnvironmentOrigin, onNavigate, onNavigateNewTab, onToggleFavorite, focusSearchTrigger }: Props) {
+export default function PageShortcuts({
+  pages,
+  favoriteKeys,
+  currentEnvironmentOrigin,
+  hasHistoryPermission = true,
+  onRequestHistoryPermission,
+  onNavigate,
+  onNavigateNewTab,
+  onToggleFavorite,
+  focusSearchTrigger,
+}: Props) {
   const [search, setSearch] = useState('');
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [highlightedIndex, setHighlightedIndex] = useState(0);
@@ -250,10 +263,10 @@ export default function PageShortcuts({ pages, favoriteKeys, currentEnvironmentO
 
   const tree = useMemo(() => buildTree(pages), [pages]);
 
-  const flatFiltered = useMemo((): VisitedPage[] | null => {
-    if (!search.trim()) return null;
-    const q = search.trim();
-    const fuse = new Fuse(pages, {
+  // Indexing depends only on the page list, so it happens once per list change
+  // instead of on every keystroke.
+  const fuse = useMemo(
+    () => new Fuse(pages, {
       keys: [
         'title',
         { name: 'path', getFn: (p: VisitedPage) => { try { return new URL(p.url).pathname; } catch { return ''; } } },
@@ -261,9 +274,14 @@ export default function PageShortcuts({ pages, favoriteKeys, currentEnvironmentO
       ],
       threshold: 0.4,
       includeScore: true,
-    });
-    return fuse.search(q).map(r => r.item);
-  }, [pages, search]);
+    }),
+    [pages]
+  );
+
+  const flatFiltered = useMemo((): VisitedPage[] | null => {
+    if (!search.trim()) return null;
+    return fuse.search(search.trim()).map(r => r.item);
+  }, [fuse, search]);
 
   useEffect(() => {
     setHighlightedIndex(0);
@@ -282,8 +300,9 @@ export default function PageShortcuts({ pages, favoriteKeys, currentEnvironmentO
   const handleSearchKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape') {
       e.preventDefault();
-      if (search) setSearch('');
-      else (e.target as HTMLInputElement).blur();
+      e.stopPropagation();
+      setSearch('');
+      (e.target as HTMLInputElement).blur();
       return;
     }
     if (flatFiltered === null) return;
@@ -310,8 +329,9 @@ export default function PageShortcuts({ pages, favoriteKeys, currentEnvironmentO
         <Search size={13} className="text-slate-500 shrink-0" />
         <input
           ref={searchRef}
-          className="bg-transparent border-none outline-none text-foreground text-sm w-full p-0 placeholder:text-slate-500"
-          placeholder="Search pages…"
+          className="bg-transparent border-none outline-none text-foreground text-sm w-full p-0 placeholder:text-slate-500 disabled:opacity-50"
+          placeholder={hasHistoryPermission ? 'Search pages…' : 'History access required'}
+          disabled={!hasHistoryPermission}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={handleSearchKeyDown}
@@ -320,7 +340,22 @@ export default function PageShortcuts({ pages, favoriteKeys, currentEnvironmentO
       </div>
 
       <div ref={listRef} className="flex flex-col flex-1 min-h-0 overflow-y-auto py-1">
-        {pages.length === 0 ? (
+        {!hasHistoryPermission ? (
+          <div className="flex flex-col items-center justify-center p-8 text-center gap-3 my-auto">
+            <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-1">
+              <History size={20} />
+            </div>
+            <h4 className="text-sm font-semibold text-foreground">History Access Required</h4>
+            <p className="text-xs text-muted-foreground max-w-[240px] leading-relaxed">
+              Page shortcuts uses your browsing history to find visited pages in this project.
+            </p>
+            {onRequestHistoryPermission && (
+              <Button size="sm" onClick={onRequestHistoryPermission} className="mt-2 cursor-pointer">
+                Grant History Access
+              </Button>
+            )}
+          </div>
+        ) : pages.length === 0 ? (
           <p className="text-slate-500 text-[0.8125rem] p-8 text-center leading-relaxed">
             Open pages on this project to build shortcuts
           </p>

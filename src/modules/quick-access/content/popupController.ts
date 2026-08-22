@@ -183,16 +183,31 @@ export class PopupController {
                     if (environments.length === 0) {
                         listEl.innerHTML = '<div class="status-msg">No environments configured.</div>';
                     } else {
-                        listEl.innerHTML = '';
+                        listEl.textContent = '';
                         environments.forEach((env, index) => {
                             const keyLabel = index + 1 === 10 ? '0' : String(index + 1);
                             const item = document.createElement('div');
                             item.className = 'item';
-                            item.innerHTML = `
-                                <span class="key-badge">${keyLabel}</span>
-                                ${env.color ? `<span class="color-dot" style="background-color: ${env.color}"></span>` : ''}
-                                <span class="env-name">${env.name}</span>
-                            `;
+
+                            const badge = document.createElement('span');
+                            badge.className = 'key-badge';
+                            badge.textContent = keyLabel;
+                            item.appendChild(badge);
+
+                            if (env.color) {
+                                const dot = document.createElement('span');
+                                dot.className = 'color-dot';
+                                // setProperty ignores anything that is not a valid
+                                // colour, so an imported config cannot inject CSS.
+                                dot.style.setProperty('background-color', env.color);
+                                item.appendChild(dot);
+                            }
+
+                            const name = document.createElement('span');
+                            name.className = 'env-name';
+                            name.textContent = env.name;
+                            item.appendChild(name);
+
                             item.addEventListener('click', () => navigateToEnv(env));
                             listEl.appendChild(item);
                         });
@@ -205,6 +220,12 @@ export class PopupController {
             const listEl = modal.querySelector('#modal-list');
             if (listEl) listEl.innerHTML = '<div class="status-msg">Failed to load environments.</div>';
         }
+
+        // hide() may have run while the environments were loading (overlay click,
+        // Escape, a second show()). Installing the handler now would leave a
+        // capture-phase listener on a page with no modal, swallowing Escape and
+        // navigating the tab whenever the user typed a digit.
+        if (this.hostElement !== host) return;
 
         this.keyHandler = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {

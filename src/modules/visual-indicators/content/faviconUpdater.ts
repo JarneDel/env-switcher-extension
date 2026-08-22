@@ -5,6 +5,9 @@ import { URLUtils } from "@/modules/environments/utils/urlUtils";
 import { MinimalBorderManager } from "./minimalBorderManager";
 import { ExtensionStorage } from "@/modules/sync/services/storage";
 
+/** Give up on a favicon that has not loaded within this window. */
+const FAVICON_LOAD_TIMEOUT_MS = 5_000;
+
 export class FaviconUpdater {
     private originalFavicons: FaviconInfo[] = [];
     private currentEnvironment: Environment | null = null;
@@ -12,13 +15,26 @@ export class FaviconUpdater {
     private ctx: CanvasRenderingContext2D;
     private originalBodyBorder: string = '';
     private bodyBorderApplied: boolean = false;
-    private minimalBorderManager: MinimalBorderManager;
+    /**
+     * Created on first use only. The minimal border is off by default, and this
+     * class is instantiated on every page, so building it eagerly injected an
+     * element and a MutationObserver into every page for a disabled feature.
+     */
+    private minimalBorderManager: MinimalBorderManager | null = null;
+    /** Rendered favicons keyed by `${sourceUrl}|${color}`, to avoid re-encoding PNGs. */
+    private readonly borderedFaviconCache = new Map<string, string>();
 
     constructor() {
         this.canvas = document.createElement('canvas');
         this.ctx = this.canvas.getContext('2d')!;
-        this.minimalBorderManager = new MinimalBorderManager();
         this.init();
+    }
+
+    private getMinimalBorderManager(): MinimalBorderManager {
+        if (!this.minimalBorderManager) {
+            this.minimalBorderManager = new MinimalBorderManager();
+        }
+        return this.minimalBorderManager;
     }
 
     private async init() {
@@ -81,19 +97,19 @@ export class FaviconUpdater {
                 // Only update minimal border if enabled in settings
                 if (config.minimalBorderEnabled === true) {
                     const height = config.minimalBorderHeight || 4; // Default to 4px if not specified
-                    this.minimalBorderManager.show(environment.color, height);
+                    this.getMinimalBorderManager().show(environment.color, height);
                 } else {
-                    this.minimalBorderManager.hide();
+                    this.minimalBorderManager?.hide();
                 }
             } else {
                 this.restoreOriginalFavicons();
                 this.restoreOriginalBodyBorder();
-                this.minimalBorderManager.hide();
+                this.minimalBorderManager?.hide();
             }
         } catch (error) {
             this.restoreOriginalFavicons();
             this.restoreOriginalBodyBorder();
-            this.minimalBorderManager.hide();
+            this.minimalBorderManager?.hide();
         }
     }
 
@@ -155,9 +171,47 @@ export class FaviconUpdater {
     }
 
     private async addBorderToFavicon(faviconUrl: string, borderColor: string): Promise<string> {
+        const cacheKey = `${faviconUrl}|${borderColor}`;
+        const cached = this.borderedFaviconCache.get(cacheKey);
+        if (cached) return cached;
+
+        const dataUrl = await this.renderBorderedFavicon(faviconUrl, borderColor);
+        this.borderedFaviconCache.set(cacheKey, dataUrl);
+        return dataUrl;
+    }
+
+    private renderBorderedFavicon(faviconUrl: string, borderColor: string): Promise<string> {
         return new Promise((resolve, reject) => {
             const img = new Image();
             img.crossOrigin = 'anonymous';
+
+            // A favicon URL that never fires load or error would otherwise leave
+            // this promise pending and the Image reachable forever, and every
+            // later refresh would allocate another one.
+            let settled = false;
+            const cleanup = () => {
+                clearTimeout(timeout);
+                // Dropping the handlers is enough to release the Image; assigning
+                // an empty src would make some browsers request the page URL.
+                img.onload = null;
+                img.onerror = null;
+            };
+            const succeed = (value: string) => {
+                if (settled) return;
+                settled = true;
+                cleanup();
+                resolve(value);
+            };
+            const fail = (error: Error) => {
+                if (settled) return;
+                settled = true;
+                cleanup();
+                reject(error);
+            };
+            const timeout = setTimeout(
+                () => fail(new Error(`Timed out loading favicon: ${faviconUrl}`)),
+                FAVICON_LOAD_TIMEOUT_MS
+            );
 
             img.onload = () => {
                 try {
@@ -183,14 +237,14 @@ export class FaviconUpdater {
                     this.ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
 
                     const dataUrl = this.canvas.toDataURL('image/png');
-                    resolve(dataUrl);
+                    succeed(dataUrl);
                 } catch (error) {
-                    reject(error);
+                    fail(error instanceof Error ? error : new Error(String(error)));
                 }
             };
 
             img.onerror = (error) => {
-                reject(new Error(`Failed to load favicon: ${error}`));
+                fail(new Error(`Failed to load favicon: ${error}`));
             };
 
             // Handle different URL formats
@@ -221,6 +275,6 @@ export class FaviconUpdater {
 
     public async refresh() {
         await this.updateForCurrentEnvironment();
-        this.minimalBorderManager.refresh();
+        this.minimalBorderManager?.refresh();
     }
 }

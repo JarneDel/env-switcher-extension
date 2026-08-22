@@ -54,7 +54,15 @@ const EnvironmentListItem: React.FC<Props> = ({ environment, errors }) => {
             value={environment.name}
             onChange={(e) => handleEnvironmentChange(environment.id, 'name', e.target.value)}
             onBlur={() => setIsEditingName(false)}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') setIsEditingName(false); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                setIsEditingName(false);
+              } else if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsEditingName(false);
+              }
+            }}
             placeholder="Environment name"
             className="h-7 w-28 shrink-0 text-xs"
           />

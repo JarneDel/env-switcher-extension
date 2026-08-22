@@ -34,6 +34,13 @@ const HeightControl = ({
   </div>
 );
 
+/**
+ * Debounce for auto-saving display settings. Kept comfortably above the
+ * previous 300ms because each save is a storage.sync write and the sliders
+ * emit a change per pixel of travel.
+ */
+const SAVE_DEBOUNCE_MS = 750;
+
 const DisplaySettingsPanel: React.FC = () => {
   const [config, setConfig] = useState<StoredConfig | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,7 +56,11 @@ const DisplaySettingsPanel: React.FC = () => {
       isFirstLoad.current = false;
       return;
     }
-    const timer = setTimeout(async () => { await saveConfig(config); }, 300);
+    const timer = setTimeout(() => {
+      // saveConfig rethrows, and browser.storage.sync caps writes at 120/min —
+      // dragging a slider can hit that, so the rejection must not escape.
+      void saveConfig(config).catch(() => { /* setting will be retried on the next edit */ });
+    }, SAVE_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [config]);
 

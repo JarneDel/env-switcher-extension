@@ -11,45 +11,35 @@ class ContentScript {
         this.languageDetector = new LanguageDetector();
     }
 
-    private handleMessages = (request: any, _sender: Browser.runtime.MessageSender, sendResponse: (response?: any) => void): boolean => {
+    private handleMessages = (request: any, _sender: Browser.runtime.MessageSender, sendResponse: (response?: any) => void): boolean | undefined => {
         switch (request.action) {
             case 'getLanguages': {
                 const languages = this.languageDetector.detect();
                 const currentLanguage = this.languageDetector.getCurrentLanguage();
                 sendResponse({ languages, currentLanguage, url: window.location.href });
-                break;
+                return undefined;
             }
             case 'refreshFavicon': {
                 this.faviconUpdater.refresh()
                     .then(() => sendResponse({ success: true }))
                     .catch((error: Error) => sendResponse({ success: false, error: error.message }));
+                // Only this branch answers asynchronously. Returning true for the
+                // others kept the message channel open for a reply that never
+                // came, leaking the port and hanging the sender's promise.
                 return true;
             }
             case 'showShortcutPopup': {
                 PopupController.show();
                 sendResponse({ success: true });
-                break;
+                return undefined;
             }
             default:
-                break;
+                return undefined;
         }
-        return true;
-    }
-
-    private observeUrlChanges(): void {
-        let lastUrl = window.location.href;
-        const observer = new MutationObserver(async () => {
-            if (window.location.href !== lastUrl) {
-                lastUrl = window.location.href;
-                await this.faviconUpdater.refresh();
-            }
-        });
-        observer.observe(document, { subtree: true, childList: true });
     }
 
     public init(): void {
         browser.runtime.onMessage.addListener(this.handleMessages);
-        this.observeUrlChanges();
     }
 }
 

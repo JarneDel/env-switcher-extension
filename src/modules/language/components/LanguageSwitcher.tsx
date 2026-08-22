@@ -55,17 +55,29 @@ const LanguageSwitcher: React.FC<Props> = ({ languages, currentLanguage, onSwitc
   const searchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // close dropdown on outside click
+  // close dropdown on outside click or Escape
   useEffect(() => {
     if (!isOpen) return;
-    const handler = (e: MouseEvent) => {
+    const handleMouseDown = (e: MouseEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setIsOpen(false);
         setSearch('');
       }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsOpen(false);
+        setSearch('');
+      }
+    };
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    };
   }, [isOpen]);
 
   // focus search when dropdown opens
@@ -109,8 +121,9 @@ const LanguageSwitcher: React.FC<Props> = ({ languages, currentLanguage, onSwitc
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape') {
       e.preventDefault();
-      if (search) setSearch('');
-      else setIsOpen(false);
+      e.stopPropagation();
+      setIsOpen(false);
+      setSearch('');
       return;
     }
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {

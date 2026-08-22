@@ -5,10 +5,31 @@ import { URLUtils } from '@/modules/environments/utils/urlUtils';
 const MAX_VISITED = 50;
 
 export class HistoryService {
+  public static async hasPermission(): Promise<boolean> {
+    try {
+      if (!browser.permissions?.contains) return false;
+      return await browser.permissions.contains({ permissions: ['history'] });
+    } catch {
+      return false;
+    }
+  }
+
+  public static async requestPermission(): Promise<boolean> {
+    try {
+      if (!browser.permissions?.request) return false;
+      return await browser.permissions.request({ permissions: ['history'] });
+    } catch {
+      return false;
+    }
+  }
+
   public static async loadProjectHistory(
     environments: Environment[],
     projectId: string
   ): Promise<VisitedPage[]> {
+    const hasPerm = await HistoryService.hasPermission();
+    if (!hasPerm) return [];
+
     const projectEnvs = environments.filter(e => e.projectId === projectId && e.baseUrl);
     if (projectEnvs.length === 0) return [];
     if (!browser.history?.search) return [];

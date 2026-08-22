@@ -1,4 +1,4 @@
-import { ExtensionStorage } from '@/modules/sync';
+import { ExtensionStorage, GLOBAL_CONFIG_KEY, PROJ_ENVS_PREFIX } from '@/modules/sync';
 import { Omnibox } from '@/shared/extension';
 import {
   HEALTH_DIRTY_RUN_INTERVAL_MS,
@@ -10,7 +10,7 @@ import {
   runHealthChecks,
   saveHealthMap,
 } from '@/modules/health';
-import type { HealthMap } from '@/types';
+import type { ExtensionConfig, HealthMap } from '@/types';
 
 class Background {
     private healthRunning = false;
@@ -24,6 +24,15 @@ class Background {
             await this.refreshFaviconForTab(activeInfo.tabId);
         });
 
+        // Handle in-page navigations (including SPA history changes). The
+        // content script used to watch for these with a document-wide
+        // MutationObserver, which made every DOM change on every page cost
+        // something; the browser already reports them here for free.
+        browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
+            if (!changeInfo.url) return;
+            void this.sendMessageSafely(tabId, { action: 'refreshFavicon' });
+        });
+
         // Handle window focus changes
         browser.windows.onFocusChanged.addListener(async (windowId) => {
             if (windowId === browser.windows.WINDOW_ID_NONE) return;
@@ -35,11 +44,19 @@ class Background {
             } catch (e) { /* Silently handle */ }
         });
 
-        // Keep health statuses in sync with config changes
-        browser.storage.onChanged.addListener((_changes, area) => {
+        // Keep health statuses in sync with config changes. Every config write
+        // lands here, so bail out before reading the config unless something
+        // health-related actually moved.
+        browser.storage.onChanged.addListener((changes: Record<string, any>, area) => {
             if (area !== 'sync') return;
-            void this.syncHealthEnabled();
-            void this.maybeRunHealthChecks();
+
+            const globalChange = changes[GLOBAL_CONFIG_KEY];
+            const healthToggled = !!globalChange &&
+                globalChange.oldValue?.healthChecksEnabled !== globalChange.newValue?.healthChecksEnabled;
+            const environmentsChanged = Object.keys(changes).some(key => key.startsWith(PROJ_ENVS_PREFIX));
+
+            if (!healthToggled && !environmentsChanged) return;
+            void this.onConfigChanged(healthToggled);
         });
 
         browser.runtime.onMessage.addListener((request: any, _sender, sendResponse) => {
@@ -71,7 +88,22 @@ class Background {
             }
         });
 
-        void this.syncHealthEnabled().then(() => this.maybeRunHealthChecks());
+        void this.onConfigChanged(true);
+    }
+
+    /**
+     * Single entry point for config-driven health work, so one config read
+     * serves both the enabled check and the run itself.
+     */
+    private async onConfigChanged(healthMayHaveBeenDisabled: boolean): Promise<void> {
+        try {
+            const config = await ExtensionStorage.getConfig();
+            if (config.healthChecksEnabled === false) {
+                if (healthMayHaveBeenDisabled) await clearHealthData();
+                return;
+            }
+            await this.maybeRunHealthChecks(config);
+        } catch (e) { /* Silently handle */ }
     }
 
     // ── health checks (on-demand / lazy) ───────────────────────────────────
@@ -82,11 +114,11 @@ class Background {
      * - a minimum interval between runs (HEALTH_MIN_RUN_INTERVAL_MS, 15 min),
      * - a shorter interval reserved for newly added/changed environments.
      */
-    private async maybeRunHealthChecks(): Promise<void> {
+    private async maybeRunHealthChecks(preloadedConfig?: ExtensionConfig): Promise<void> {
         if (this.healthRunning) return;
 
         try {
-            const config = await ExtensionStorage.getConfig();
+            const config = preloadedConfig ?? await ExtensionStorage.getConfig();
             if (config.healthChecksEnabled === false) return;
             const envs = config.environments.filter(e => e.baseUrl);
             if (envs.length === 0) return;
@@ -121,16 +153,6 @@ class Background {
         } catch (e) { /* Silently handle */ }
     }
 
-    /** Clear health data when user disables the setting. */
-    private async syncHealthEnabled(): Promise<void> {
-        try {
-            const config = await ExtensionStorage.getConfig();
-            if (config.healthChecksEnabled === false) {
-                await clearHealthData();
-            }
-        } catch (e) { /* Silently handle */ }
-    }
-
     // ── favicon refresh ─────────────────────────────────────────────────────
 
     private async sendMessageSafely(tabId: number, message: any): Promise<void> {
@@ -152,12 +174,14 @@ class Background {
 
     private async refreshAllTabFavicons(): Promise<void> {
         try {
+            // query() already carries each tab's url, so this needs no per-tab
+            // tabs.get(), and the sends run concurrently rather than serially.
             const tabs = await browser.tabs.query({});
-            for (const tab of tabs) {
-                if (tab.id) {
-                    await this.refreshFaviconForTab(tab.id);
-                }
-            }
+            await Promise.allSettled(
+                tabs
+                    .filter(tab => typeof tab.id === 'number' && tab.url && /^https?:/.test(tab.url))
+                    .map(tab => this.sendMessageSafely(tab.id!, { action: 'refreshFavicon' }))
+            );
         } catch (error) {
             // Failed to refresh all tab favicons - silently handle
         }
