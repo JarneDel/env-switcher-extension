@@ -1,6 +1,6 @@
-import { FaviconUpdater } from '../content/favicon-updater';
-import { PopupController } from '../content/popup-controller';
-import { LanguageDetector } from '../content/language-detector';
+import { FaviconUpdater } from '@/modules/visual-indicators';
+import { PopupController } from '@/modules/quick-access';
+import { LanguageDetector } from '@/modules/language';
 
 class ContentScript {
     private readonly faviconUpdater: FaviconUpdater;

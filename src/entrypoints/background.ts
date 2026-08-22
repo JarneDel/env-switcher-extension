@@ -1,6 +1,6 @@
-import { ExtensionStorage } from '../libs/storage.ts';
-import { Omnibox } from '../libs/omnibox.ts';
-import { URLUtils } from '../libs/urlUtils.ts';
+import { ExtensionStorage } from '@/modules/sync';
+import { Omnibox } from '@/shared/extension';
+import { URLUtils } from '@/modules/environments';
 import {
   HEALTH_ALARM_NAME,
   HEALTH_CHECK_PERIOD_MINUTES,
@@ -12,7 +12,7 @@ import {
   loadHealthMap,
   runHealthChecks,
   saveHealthMap,
-} from '../libs/healthCheck.ts';
+} from '@/modules/health';
 import type { ExtensionConfig, HealthMap } from '@/types';
 
 const MENU_ROOT_ID = 'env-switcher-root';
