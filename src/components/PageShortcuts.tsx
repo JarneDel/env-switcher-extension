@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import Fuse from 'fuse.js';
 import { Search, ChevronRight, Star } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -77,21 +77,27 @@ interface PageLeafProps {
   page: VisitedPage;
   depth: number;
   isFavorite: boolean;
+  isHighlighted?: boolean;
   onNavigate: (url: string) => void;
   onNavigateNewTab: (url: string) => void;
   onToggleFavorite: (page: VisitedPage) => void;
 }
 
-function PageLeaf({ page, depth, isFavorite, onNavigate, onNavigateNewTab, onToggleFavorite }: PageLeafProps) {
+function PageLeaf({ page, depth, isFavorite, isHighlighted, onNavigate, onNavigateNewTab, onToggleFavorite }: PageLeafProps) {
   return (
     <div
+      data-page-row=""
       className={cn(
         'group flex items-center gap-0 w-full text-left',
-        'transition-colors duration-[0.12s] hover:bg-card'
+        'transition-colors duration-[0.12s] hover:bg-card',
+        isHighlighted && 'bg-card'
       )}
     >
       <button
-        className="flex items-center gap-2 flex-1 min-w-0 py-1.5 text-left border-none cursor-pointer bg-transparent text-slate-300 hover:text-card-foreground"
+        className={cn(
+          'flex items-center gap-2 flex-1 min-w-0 py-1.5 text-left border-none cursor-pointer bg-transparent',
+          isHighlighted ? 'text-card-foreground' : 'text-slate-300 hover:text-card-foreground'
+        )}
         style={{ paddingLeft: `${12 + depth * 14}px` }}
         onClick={() => onNavigate(page.url)}
         onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onNavigateNewTab(page.url); } }}
@@ -224,7 +230,9 @@ function resolvePageUrl(page: VisitedPage, origin?: string): string {
 export default function PageShortcuts({ pages, favoriteKeys, currentEnvironmentOrigin, onNavigate, onNavigateNewTab, onToggleFavorite, focusSearchTrigger }: Props) {
   const [search, setSearch] = useState('');
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
   const searchRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const resolvedNavigate = (page: VisitedPage) => onNavigate(resolvePageUrl(page, currentEnvironmentOrigin));
   const resolvedNavigateNewTab = (page: VisitedPage) => onNavigateNewTab(resolvePageUrl(page, currentEnvironmentOrigin));
@@ -257,6 +265,44 @@ export default function PageShortcuts({ pages, favoriteKeys, currentEnvironmentO
     return fuse.search(q).map(r => r.item);
   }, [pages, search]);
 
+  useEffect(() => {
+    setHighlightedIndex(0);
+  }, [search]);
+
+  const activeIndex = flatFiltered?.length
+    ? Math.min(highlightedIndex, flatFiltered.length - 1)
+    : 0;
+
+  useEffect(() => {
+    if (flatFiltered === null || !flatFiltered.length) return;
+    const rows = listRef.current?.querySelectorAll('[data-page-row]');
+    rows?.[activeIndex]?.scrollIntoView({ block: 'nearest' });
+  }, [activeIndex, flatFiltered]);
+
+  const handleSearchKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (search) setSearch('');
+      else (e.target as HTMLInputElement).blur();
+      return;
+    }
+    if (flatFiltered === null) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const count = flatFiltered.length;
+      if (!count) return;
+      setHighlightedIndex(i =>
+        e.key === 'ArrowDown' ? (i + 1) % count : (i - 1 + count) % count
+      );
+      return;
+    }
+    if (e.key !== 'Enter' || !flatFiltered.length) return;
+    e.preventDefault();
+    const page = flatFiltered[activeIndex];
+    if (e.shiftKey) resolvedNavigateNewTab(page);
+    else resolvedNavigate(page);
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Search bar */}
@@ -268,17 +314,12 @@ export default function PageShortcuts({ pages, favoriteKeys, currentEnvironmentO
           placeholder="Search pages…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') {
-              e.preventDefault();
-              if (search) setSearch('');
-              else (e.target as HTMLInputElement).blur();
-            }
-          }}
+          onKeyDown={handleSearchKeyDown}
+          title="↑↓: navigate · Enter: open · Shift+Enter: open in new tab"
         />
       </div>
 
-      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto py-1">
+      <div ref={listRef} className="flex flex-col flex-1 min-h-0 overflow-y-auto py-1">
         {pages.length === 0 ? (
           <p className="text-slate-500 text-[0.8125rem] p-8 text-center leading-relaxed">
             Open pages on this project to build shortcuts
@@ -287,12 +328,13 @@ export default function PageShortcuts({ pages, favoriteKeys, currentEnvironmentO
           flatFiltered.length === 0 ? (
             <p className="text-slate-500 text-[0.8125rem] p-4 text-center">No pages match</p>
           ) : (
-          flatFiltered.map(page => (
+          flatFiltered.map((page, i) => (
               <PageLeaf
                 key={page.key}
                 page={page}
                 depth={0}
                 isFavorite={favoriteKeys.has(getPagePathname(page))}
+                isHighlighted={i === activeIndex}
                 onNavigate={() => resolvedNavigate(page)}
                 onNavigateNewTab={() => resolvedNavigateNewTab(page)}
                 onToggleFavorite={onToggleFavorite}

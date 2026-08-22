@@ -27,6 +27,7 @@ export const loadConfig = async (sync = true): Promise<StoredConfig> => {
     favorites: [],
     hasVisitedDisplaySettings: false,
     recentsProjectScoped: false,
+    healthChecksEnabled: true,
   };
 
   try {
@@ -77,6 +78,7 @@ export const loadConfig = async (sync = true): Promise<StoredConfig> => {
         favorites: Array.isArray(global.favorites) ? global.favorites : [],
         hasVisitedDisplaySettings: typeof global.hasVisitedDisplaySettings === 'boolean' ? global.hasVisitedDisplaySettings : false,
         recentsProjectScoped: typeof global.recentsProjectScoped === 'boolean' ? global.recentsProjectScoped : false,
+        healthChecksEnabled: typeof global.healthChecksEnabled === 'boolean' ? global.healthChecksEnabled : true,
       };
     }
 
@@ -97,6 +99,7 @@ export const loadConfig = async (sync = true): Promise<StoredConfig> => {
         favorites: Array.isArray(legacyConfig.favorites) ? legacyConfig.favorites : [],
         hasVisitedDisplaySettings: typeof legacyConfig.hasVisitedDisplaySettings === 'boolean' ? legacyConfig.hasVisitedDisplaySettings : false,
         recentsProjectScoped: typeof legacyConfig.recentsProjectScoped === 'boolean' ? legacyConfig.recentsProjectScoped : false,
+        healthChecksEnabled: typeof legacyConfig.healthChecksEnabled === 'boolean' ? legacyConfig.healthChecksEnabled : true,
       };
     }
 
@@ -124,6 +127,7 @@ export const saveConfig = async (config: StoredConfig, sync = true): Promise<voi
       favorites: config.favorites,
       hasVisitedDisplaySettings: config.hasVisitedDisplaySettings,
       recentsProjectScoped: config.recentsProjectScoped,
+      healthChecksEnabled: config.healthChecksEnabled,
     };
 
     const payload: Record<string, any> = {

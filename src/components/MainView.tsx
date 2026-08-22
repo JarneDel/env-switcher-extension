@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Settings, AlertTriangle, Star, Keyboard, SlidersHorizontal } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn, capitalize } from '../lib/utils';
-import type { Environment, TabInfo, ExtensionConfig, LanguageOption, VisitedPage, FavoritePage } from '@/types';
+import type { Environment, TabInfo, ExtensionConfig, LanguageOption, VisitedPage, FavoritePage, HealthMap } from '@/types';
 import EnvironmentSwitcher from './EnvironmentSwitcher';
 import LanguageSwitcher from './LanguageSwitcher';
 import PageShortcuts from './PageShortcuts';
@@ -14,6 +14,7 @@ interface MainViewProps {
   isConfigured: boolean;
   visitedPages: VisitedPage[];
   favorites: FavoritePage[];
+  healthMap?: HealthMap;
   onEnvironmentSwitch: (env: Environment) => void;
   onEnvironmentSwitchNewTab: (env: Environment) => void;
   onLanguageSwitch: (lang: LanguageOption) => void;
@@ -30,6 +31,7 @@ export default function MainView({
   isConfigured,
   visitedPages,
   favorites,
+  healthMap,
   onEnvironmentSwitch,
   onEnvironmentSwitchNewTab,
   onLanguageSwitch,
@@ -204,6 +206,7 @@ export default function MainView({
                 projects={config?.projects || []}
                 currentEnvironment={currentTab?.currentEnvironment}
                 recentEnvironmentIds={scopedRecentEnvironmentIds}
+                healthMap={healthMap}
                 onSwitch={onEnvironmentSwitch}
                 onSwitchNewTab={onEnvironmentSwitchNewTab}
                 focusSearchTrigger={focusEnvSearch}
@@ -278,6 +281,8 @@ export default function MainView({
                 ]},
                 { label: 'Search', rows: [
                   { keys: ['/'], desc: 'Focus search in current tab' },
+                  { keys: ['↑', '↓'], desc: 'Navigate results' },
+                  { keys: ['Enter'], desc: 'Select highlighted result' },
                   { keys: ['Esc'], desc: 'Clear search / blur input' },
                 ]},
                 { label: 'Favorites', rows: [

@@ -43,6 +43,7 @@ const Chin = ({ children, className }: { children: React.ReactNode; className?: 
 const LanguageSwitcher: React.FC<Props> = ({ languages, currentLanguage, onSwitch, isOpen: controlledIsOpen, onOpenChange }) => {
   const [internalOpen, setInternalOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
 
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalOpen;
   const setIsOpen = (val: boolean | ((prev: boolean) => boolean)) => {
@@ -52,6 +53,7 @@ const LanguageSwitcher: React.FC<Props> = ({ languages, currentLanguage, onSwitc
   };
   const wrapperRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // close dropdown on outside click
   useEffect(() => {
@@ -71,9 +73,32 @@ const LanguageSwitcher: React.FC<Props> = ({ languages, currentLanguage, onSwitc
     if (isOpen) setTimeout(() => searchRef.current?.focus(), 0);
   }, [isOpen]);
 
-  if (!languages?.length) return null;
+  // reset highlight when dropdown opens or search changes
+  useEffect(() => {
+    setHighlightedIndex(0);
+  }, [isOpen, search]);
 
-  const activeLang = languages.find(l => currentLanguage && sameRoot(currentLanguage, l.code));
+  const activeLang = languages?.find(l => currentLanguage && sameRoot(currentLanguage, l.code));
+
+  const filtered = search.trim()
+    ? (languages ?? []).filter(l =>
+        l.name.toLowerCase().includes(search.toLowerCase()) ||
+        l.code.toLowerCase().includes(search.toLowerCase())
+      )
+    : (languages ?? []);
+
+  const activeIndex = filtered.length
+    ? Math.min(highlightedIndex, filtered.length - 1)
+    : -1;
+
+  // keep highlighted option in view
+  useEffect(() => {
+    if (!isOpen || activeIndex < 0) return;
+    const rows = listRef.current?.querySelectorAll('[data-lang-row]');
+    rows?.[activeIndex]?.scrollIntoView({ block: 'nearest' });
+  }, [isOpen, activeIndex, filtered.length]);
+
+  if (!languages?.length) return null;
 
   const handleSelect = (lang: LanguageOption) => {
     onSwitch(lang);
@@ -81,13 +106,26 @@ const LanguageSwitcher: React.FC<Props> = ({ languages, currentLanguage, onSwitc
     setSearch('');
   };
 
-  // ── always use dropdown ───────────────────────────────────────────────────
-  const filtered = search.trim()
-    ? languages.filter(l =>
-        l.name.toLowerCase().includes(search.toLowerCase()) ||
-        l.code.toLowerCase().includes(search.toLowerCase())
-      )
-    : languages;
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (search) setSearch('');
+      else setIsOpen(false);
+      return;
+    }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const count = filtered.length;
+      if (!count) return;
+      setHighlightedIndex(i =>
+        e.key === 'ArrowDown' ? (i + 1) % count : (i - 1 + count) % count
+      );
+      return;
+    }
+    if (e.key !== 'Enter' || activeIndex < 0) return;
+    e.preventDefault();
+    handleSelect(filtered[activeIndex]);
+  };
 
   return (
     <Chin className="relative" >
@@ -120,27 +158,31 @@ const LanguageSwitcher: React.FC<Props> = ({ languages, currentLanguage, onSwitc
                 ref={searchRef}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder="Search…"
                 className="flex-1 bg-transparent border-none outline-none text-foreground text-xs p-0 placeholder:text-muted-foreground"
               />
             </div>
 
             {/* list */}
-            <div className="max-h-52 overflow-y-auto">
+            <div ref={listRef} className="max-h-52 overflow-y-auto">
               {filtered.length === 0 ? (
                 <p className="py-3 text-center text-xs text-muted-foreground">No match</p>
               ) : (
-                filtered.map(lang => {
+                filtered.map((lang, i) => {
                   const active = !!currentLanguage && sameRoot(currentLanguage, lang.code);
+                  const isHighlighted = i === activeIndex;
                   return (
                     <button
                       key={lang.code}
+                      data-lang-row=""
                       onClick={() => handleSelect(lang)}
                       className={cn(
                         'flex items-center gap-2.5 w-full px-2.5 py-2 text-left text-xs transition-colors duration-100',
-                        active
-                          ? 'bg-accent text-foreground font-semibold'
-                          : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                        active || isHighlighted
+                          ? 'bg-accent text-foreground'
+                          : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                        active && 'font-semibold'
                       )}
                     >
                       <span className="text-sm leading-none select-none shrink-0">{getFlag(lang.code)}</span>

@@ -2,13 +2,14 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Fuse from 'fuse.js';
 import { Search } from 'lucide-react';
 import { cn, capitalize } from '../lib/utils';
-import type { Environment, Project } from '@/types';
+import type { Environment, HealthEntry, HealthMap, Project } from '@/types';
 
 interface Props {
   environments: Environment[];
   projects: Project[];
   currentEnvironment?: Environment;
   recentEnvironmentIds: string[];
+  healthMap?: HealthMap;
   onSwitch: (env: Environment) => void;
   onSwitchNewTab: (env: Environment) => void;
   focusSearchTrigger?: number;
@@ -18,17 +19,33 @@ function getHostname(url: string): string {
   try { return new URL(url).hostname; } catch { return url; }
 }
 
+function formatAge(ms: number): string {
+  if (ms < 60_000) return 'just now';
+  if (ms < 3_600_000) return `${Math.floor(ms / 60_000)}m ago`;
+  return `${Math.floor(ms / 3_600_000)}h ago`;
+}
+
+function healthTitle(entry: HealthEntry): string {
+  const status = entry.status === 'up' ? 'Reachable' : 'Unreachable';
+  const code = entry.statusCode !== undefined ? ` · HTTP ${entry.statusCode}` : '';
+  const latency = entry.latencyMs !== undefined ? ` · ${entry.latencyMs} ms` : '';
+  return `${status}${code}${latency} · checked ${formatAge(Date.now() - entry.lastChecked)}`;
+}
+
 const EnvironmentSwitcher: React.FC<Props> = ({
   environments,
   projects,
   currentEnvironment,
   recentEnvironmentIds,
+  healthMap,
   onSwitch,
   onSwitchNewTab,
   focusSearchTrigger,
 }) => {
   const [search, setSearch] = useState('');
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
   const searchRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (focusSearchTrigger) searchRef.current?.focus();
@@ -38,9 +55,10 @@ const EnvironmentSwitcher: React.FC<Props> = ({
 
   const currentProject = currentEnvironment ? projectMap.get(currentEnvironment.projectId) : undefined;
 
-  const currentProjectEnvs = currentEnvironment
-    ? environments.filter(e => e.projectId === currentEnvironment.projectId)
-    : [];
+  const currentProjectEnvs = useMemo(() => {
+    if (!currentEnvironment) return [];
+    return environments.filter(e => e.projectId === currentEnvironment.projectId);
+  }, [environments, currentEnvironment]);
 
   const recentEnvs = useMemo(() => {
     return recentEnvironmentIds
@@ -72,6 +90,27 @@ const EnvironmentSwitcher: React.FC<Props> = ({
     return result;
   }, [searchGroups]);
 
+  const defaultEnvs = useMemo(
+    () => [...recentEnvs, ...currentProjectEnvs],
+    [recentEnvs, currentProjectEnvs]
+  );
+  const navigableEnvs = searchGroups ? allMatchedEnvs : defaultEnvs;
+  const activeIndex = navigableEnvs.length
+    ? Math.min(highlightedIndex, navigableEnvs.length - 1)
+    : 0;
+  const highlightedEnv = navigableEnvs[activeIndex];
+
+  useEffect(() => {
+    setHighlightedIndex(0);
+  }, [search]);
+
+  useEffect(() => {
+    if (!highlightedEnv) return;
+    listRef.current
+      ?.querySelector(`[data-env-row="${highlightedEnv.id}"]`)
+      ?.scrollIntoView({ block: 'nearest' });
+  }, [highlightedIndex, navigableEnvs]);
+
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape') {
       e.preventDefault();
@@ -79,23 +118,36 @@ const EnvironmentSwitcher: React.FC<Props> = ({
       else (e.target as HTMLInputElement).blur();
       return;
     }
-    if (e.key !== 'Enter' || allMatchedEnvs.length !== 1) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const count = navigableEnvs.length;
+      if (!count) return;
+      setHighlightedIndex(i =>
+        e.key === 'ArrowDown' ? (i + 1) % count : (i - 1 + count) % count
+      );
+      return;
+    }
+    if (e.key !== 'Enter' || !navigableEnvs.length) return;
     e.preventDefault();
+    const env = navigableEnvs[activeIndex];
+    if (!env) return;
     if (e.shiftKey) {
-      onSwitchNewTab(allMatchedEnvs[0]);
+      onSwitchNewTab(env);
     } else {
-      onSwitch(allMatchedEnvs[0]);
+      onSwitch(env);
     }
     setSearch('');
+    setHighlightedIndex(0);
   };
 
   if (environments.length === 0) return null;
 
-  const EnvRow = ({ env, isCurrent }: { env: Environment; isCurrent: boolean }) => (
+  const EnvRow = ({ env, isCurrent, isHighlighted }: { env: Environment; isCurrent: boolean; isHighlighted: boolean }) => (
     <button
+      data-env-row={env.id}
       className={cn(
         'flex items-center gap-2.5 px-4 py-2 w-full text-left border-none cursor-pointer transition-colors duration-[0.12s] text-sm',
-        isCurrent
+        isCurrent || isHighlighted
           ? 'bg-card text-card-foreground'
           : 'bg-transparent text-slate-300 hover:bg-card hover:text-card-foreground'
       )}
@@ -107,6 +159,15 @@ const EnvironmentSwitcher: React.FC<Props> = ({
       <span className={cn('text-sm flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap', isCurrent && 'font-semibold')}>
         {capitalize(env.name)}
       </span>
+      {healthMap?.[env.id] && (
+        <span
+          className={cn(
+            'size-1.5 rounded-full shrink-0',
+            healthMap[env.id].status === 'up' ? 'bg-emerald-500' : 'bg-red-500'
+          )}
+          title={healthTitle(healthMap[env.id])}
+        />
+      )}
       <span className={cn(
         'text-xs shrink-0 max-w-32.5 overflow-hidden text-ellipsis whitespace-nowrap',
         isCurrent ? 'text-muted-foreground' : 'text-slate-500'
@@ -128,12 +189,12 @@ const EnvironmentSwitcher: React.FC<Props> = ({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={handleSearchKeyDown}
-          title="Enter: switch · Shift+Enter: open in new tab (when 1 result)"
+          title="↑↓: navigate · Enter: switch · Shift+Enter: open in new tab"
         />
       </div>
 
       {/* list */}
-      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
+      <div ref={listRef} className="flex flex-col flex-1 min-h-0 overflow-y-auto">
         {searchGroups ? (
           searchGroups.size === 0 ? (
             <p className="text-slate-500 text-[0.8125rem] p-4 text-center">No environments match</p>
@@ -149,7 +210,12 @@ const EnvironmentSwitcher: React.FC<Props> = ({
                     {capitalize(proj?.name || 'Unknown')}
                   </div>
                   {envs.map(env => (
-                    <EnvRow key={env.id} env={env} isCurrent={currentEnvironment?.id === env.id} />
+                    <EnvRow
+                      key={env.id}
+                      env={env}
+                      isCurrent={currentEnvironment?.id === env.id}
+                      isHighlighted={highlightedEnv?.id === env.id}
+                    />
                   ))}
                 </div>
               );
@@ -163,7 +229,12 @@ const EnvironmentSwitcher: React.FC<Props> = ({
                   RECENT
                 </div>
                 {recentEnvs.map(env => (
-                  <EnvRow key={env.id} env={env} isCurrent={false} />
+                  <EnvRow
+                    key={env.id}
+                    env={env}
+                    isCurrent={false}
+                    isHighlighted={highlightedEnv?.id === env.id}
+                  />
                 ))}
               </div>
             )}
@@ -178,7 +249,12 @@ const EnvironmentSwitcher: React.FC<Props> = ({
                   </div>
                 )}
                 {currentProjectEnvs.map(env => (
-                  <EnvRow key={env.id} env={env} isCurrent={currentEnvironment?.id === env.id} />
+                  <EnvRow
+                    key={env.id}
+                    env={env}
+                    isCurrent={currentEnvironment?.id === env.id}
+                    isHighlighted={highlightedEnv?.id === env.id}
+                  />
                 ))}
               </div>
             ) : (

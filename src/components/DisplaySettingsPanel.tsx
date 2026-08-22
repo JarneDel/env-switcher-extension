@@ -179,6 +179,26 @@ const DisplaySettingsPanel: React.FC = () => {
         </div>
       </div>
 
+      {/* ── Environment health ── */}
+      <div className="border-t border-border pt-4">
+        <h3 className="text-[0.9375rem] font-semibold text-foreground mb-3">Environment Health</h3>
+        <div>
+          <label className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer">
+            <input
+              type="checkbox"
+              checked={config.healthChecksEnabled ?? true}
+              onChange={(e) => update({ healthChecksEnabled: e.target.checked })}
+              className="m-0"
+            />
+            Check environment availability
+          </label>
+          <p className="ml-6 mt-1 text-[0.8125rem] text-muted-foreground leading-[1.4]">
+            Periodically check whether each environment is reachable and show a status dot in the
+            switcher. Checks run at most every 15 minutes.
+          </p>
+        </div>
+      </div>
+
     </div>
   );
 };

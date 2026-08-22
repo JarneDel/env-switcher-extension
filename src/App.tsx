@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import type {Environment, TabInfo, ExtensionConfig, LanguageOption, VisitedPage, FavoritePage} from './types';
+import type {Environment, TabInfo, ExtensionConfig, LanguageOption, VisitedPage, FavoritePage, HealthMap} from './types';
 import { ExtensionStorage } from './libs/storage';
 import { URLUtils } from './libs/urlUtils';
+import { HEALTH_STORAGE_KEY, loadHealthMap } from './libs/healthCheck';
 import MainView from './components/MainView';
 import SettingsView from './components/SettingsView';
 import SetupWelcome from './components/SetupWelcome';
@@ -14,6 +15,7 @@ function App() {
   const [isConfigured, setIsConfigured] = useState(false);
 
   const [visitedPages, setVisitedPages] = useState<VisitedPage[]>([]);
+  const [healthMap, setHealthMap] = useState<HealthMap>({});
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,6 +33,21 @@ function App() {
     return () => {
       browser.tabs.onUpdated.removeListener(handleTabUpdate);
     };
+  }, []);
+
+  // Ask the background to refresh stale statuses (throttled there) and keep
+  // the UI in sync as new results are written to storage.
+  useEffect(() => {
+    browser.runtime.sendMessage({ action: 'healthRefresh' }).catch(() => {});
+    loadHealthMap().then(setHealthMap).catch(() => {});
+
+    const handleStorageChange = (changes: Record<string, any>, area: string) => {
+      if (area === 'local' && HEALTH_STORAGE_KEY in changes) {
+        setHealthMap(changes[HEALTH_STORAGE_KEY]?.newValue ?? {});
+      }
+    };
+    browser.storage.onChanged.addListener(handleStorageChange);
+    return () => browser.storage.onChanged.removeListener(handleStorageChange);
   }, []);
 
   // Reload data when navigating back to main view so auto-saved changes are reflected
@@ -314,6 +331,7 @@ function App() {
               isConfigured={isConfigured}
               visitedPages={visitedPages}
               favorites={config?.favorites || []}
+              healthMap={config?.healthChecksEnabled === false ? undefined : healthMap}
               onEnvironmentSwitch={handleEnvironmentSwitch}
               onEnvironmentSwitchNewTab={handleEnvironmentSwitchNewTab}
               onLanguageSwitch={handleLanguageSwitch}
