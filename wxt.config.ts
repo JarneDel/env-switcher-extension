@@ -19,7 +19,7 @@ export default defineConfig({
 
     manifest: {
         name: 'Environment Switcher',
-        version: '1.0.13',
+        version: '1.0.14',
         description: 'Switch between different environments and languages with ease',
         permissions: ['storage', 'activeTab', 'tabs', 'scripting', 'history', 'alarms', 'contextMenus'],
         host_permissions: ['http://*/*', 'https://*/*'],
