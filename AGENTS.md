@@ -22,7 +22,7 @@ The codebase is organized into **Domain Modules** under `src/modules/`, cross-cu
 ```
 src/
 ├── entrypoints/                          # WXT Entry Points
-│   ├── background.ts                     # Background service worker (alarms, omnibox, context menus, health)
+│   ├── background.ts                     # Background service worker (omnibox, favicons, on-demand health)
 │   ├── content.ts                        # In-page content script orchestrator
 │   └── popup/                            # Extension Popup Shell
 │       ├── index.html
