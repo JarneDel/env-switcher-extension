@@ -208,7 +208,7 @@ export default function MainView({
           {!bookmarksEnabled || activeTab === 'envs' ? (
             <>
               <EnvironmentSwitcher
-                environments={scopedEnvironments}
+                environments={config?.environments || []}
                 projects={config?.projects || []}
                 currentEnvironment={currentTab?.currentEnvironment}
                 recentEnvironmentIds={scopedRecentEnvironmentIds}

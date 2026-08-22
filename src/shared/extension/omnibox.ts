@@ -179,14 +179,28 @@ export class Omnibox {
 
     browser.omnibox.onInputChanged.addListener((text, suggest) => {
       (async () => {
+        const trimmed = text.trim().toLowerCase();
         const config = await ExtensionStorage.getConfig();
         const environments = config.environments || [];
         const projects = config.projects || [];
         const projMap = projectMap(projects);
         const results = searchEnvironments(environments, projects, text);
 
-        if (!text.trim()) {
+        if (!trimmed) {
           suggest(results.slice(0, MAX_SUGGESTIONS).map(env => toSuggestion(env, projMap)));
+          return;
+        }
+
+        const isSettingsMatch = ['settings', 'setting', 'config', 'configuration', 'options', 'pref', 'preferences'].some(
+          s => s.startsWith(trimmed) || trimmed.startsWith(s)
+        );
+
+        if (isSettingsMatch && results.length === 0) {
+          browser.omnibox.setDefaultSuggestion({
+            description: isFirefox
+              ? '⚙️ Settings — Open extension settings'
+              : '⚙️ <match>Settings</match> <dim>—</dim> <url>Open extension settings</url>',
+          });
           return;
         }
 
@@ -202,6 +216,22 @@ export class Omnibox {
 
     browser.omnibox.onInputEntered.addListener((text, disposition) => {
       (async () => {
+        const trimmed = text.trim().toLowerCase();
+
+        // Handle settings navigation from omnibox
+        if (
+          trimmed === 'settings' ||
+          trimmed === 'setting' ||
+          trimmed === 'config' ||
+          trimmed === 'configuration' ||
+          trimmed === 'options' ||
+          trimmed === 'env:settings'
+        ) {
+          const url = browser.runtime.getURL('/popup.html#/settings' as `/${string}`);
+          await browser.tabs.create({ url });
+          return;
+        }
+
         const config = await ExtensionStorage.getConfig();
         const environments = config.environments || [];
         const projects = config.projects || [];

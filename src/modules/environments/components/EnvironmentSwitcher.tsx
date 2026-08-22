@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Fuse from 'fuse.js';
-import { Search } from 'lucide-react';
+import { Search, Settings } from 'lucide-react';
+import { useNavigate } from '@/shared/router';
 import { cn, capitalize } from '@/shared/utils';
 import type { Environment, HealthEntry, HealthMap, Project } from '@/types';
 
@@ -42,6 +43,7 @@ const EnvironmentSwitcher: React.FC<Props> = ({
   onSwitchNewTab,
   focusSearchTrigger,
 }) => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -127,7 +129,16 @@ const EnvironmentSwitcher: React.FC<Props> = ({
       );
       return;
     }
-    if (e.key !== 'Enter' || !navigableEnvs.length) return;
+    if (e.key !== 'Enter') return;
+    
+    if (!navigableEnvs.length) {
+      if (search.toLowerCase().includes('setting') || search.toLowerCase().includes('config')) {
+        e.preventDefault();
+        navigate('/settings');
+      }
+      return;
+    }
+
     e.preventDefault();
     const env = navigableEnvs[activeIndex];
     if (!env) return;
@@ -197,7 +208,17 @@ const EnvironmentSwitcher: React.FC<Props> = ({
       <div ref={listRef} className="flex flex-col flex-1 min-h-0 overflow-y-auto">
         {searchGroups ? (
           searchGroups.size === 0 ? (
-            <p className="text-slate-500 text-[0.8125rem] p-4 text-center">No environments match</p>
+            <div className="flex flex-col items-center justify-center p-6 gap-2 text-center">
+              <p className="text-muted-foreground text-sm">No environments match &ldquo;{search}&rdquo;</p>
+              <button
+                type="button"
+                onClick={() => navigate('/settings')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-primary hover:bg-primary/10 transition-colors cursor-pointer border border-primary/20 mt-1"
+              >
+                <Settings size={13} />
+                Configure in Settings →
+              </button>
+            </div>
           ) : (
             Array.from(searchGroups.entries()).map(([projectId, envs]) => {
               const proj = projectMap.get(projectId);
@@ -258,11 +279,21 @@ const EnvironmentSwitcher: React.FC<Props> = ({
                 ))}
               </div>
             ) : (
-              <p className="text-slate-500 text-[0.8125rem] p-4 text-center">
-                {currentEnvironment
-                  ? 'No environments in this project'
-                  : 'Not on a configured site'}
-              </p>
+              <div className="flex flex-col items-center justify-center p-6 gap-2 text-center">
+                <p className="text-muted-foreground text-sm">
+                  {currentEnvironment
+                    ? 'No environments in this project'
+                    : 'Not on a configured site'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => navigate('/settings')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-primary hover:bg-primary/10 transition-colors cursor-pointer border border-primary/20 mt-1"
+                >
+                  <Settings size={13} />
+                  Configure environments →
+                </button>
+              </div>
             )}
           </>
         )}
