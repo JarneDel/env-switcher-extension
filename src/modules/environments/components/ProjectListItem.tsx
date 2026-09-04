@@ -16,6 +16,7 @@ interface Props {
   validateProject: (project: Project) => string[];
   validateEnvironment: (env: Environment) => string[];
   isCurrent?: boolean;
+  isRecent?: boolean;
 }
 
 const ProjectListItem: React.FC<Props> = ({
@@ -25,8 +26,10 @@ const ProjectListItem: React.FC<Props> = ({
   validateProject,
   validateEnvironment,
   isCurrent = false,
+  isRecent = false,
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(!isCurrent);
+  const hasManuallyToggled = useRef(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -39,6 +42,13 @@ const ProjectListItem: React.FC<Props> = ({
     clearNewlyAddedStatus,
     currentTabUrl,
   } = useConfiguration();
+
+  // Auto-expand if this project becomes current (and user hasn't manually collapsed it)
+  useEffect(() => {
+    if (isCurrent && !hasManuallyToggled.current) {
+      setIsCollapsed(false);
+    }
+  }, [isCurrent]);
 
   const isAlreadyTracked = (() => {
     if (!currentTabUrl) return false;
@@ -82,7 +92,10 @@ const ProjectListItem: React.FC<Props> = ({
         <Button
           variant="ghost"
           size="icon-sm"
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={() => {
+            hasManuallyToggled.current = true;
+            setIsCollapsed(!isCollapsed);
+          }}
           title={isCollapsed ? 'Expand' : 'Collapse'}
           className="shrink-0 text-muted-foreground"
         >
@@ -119,11 +132,15 @@ const ProjectListItem: React.FC<Props> = ({
             title="Double-click to edit"
           >
             <span className="truncate">{capitalize(project.name) || `Project #${projectIndex + 1}`}</span>
-            {isCurrent && (
+            {isCurrent ? (
               <Badge variant="outline" className="text-[10px] h-4 px-1.5 text-primary border-primary/30 bg-primary/5 shrink-0 font-normal">
                 current
               </Badge>
-            )}
+            ) : isRecent ? (
+              <Badge variant="outline" className="text-[10px] h-4 px-1.5 text-amber-500/90 border-amber-500/30 bg-amber-500/5 shrink-0 font-normal">
+                recent
+              </Badge>
+            ) : null}
           </span>
         )}
 
@@ -152,15 +169,8 @@ const ProjectListItem: React.FC<Props> = ({
 
       {/* collapsible environment list */}
       <div {...collapseProps}>
-        <div className="flex flex-col gap-1.5 pb-1">
-          {environments.map((env) => (
-            <EnvironmentListItem
-              key={env.id}
-              environment={env}
-              errors={validateEnvironment(env)}
-            />
-          ))}
-          <div className="flex gap-2 pt-1">
+        <div className="flex flex-col gap-1.5 pb-1 pt-1">
+          <div className="flex gap-2 pb-1">
             <Button
               variant="outline"
               size="sm"
@@ -180,6 +190,13 @@ const ProjectListItem: React.FC<Props> = ({
               <Globe size={12} /> Add current
             </Button>
           </div>
+          {environments.map((env) => (
+            <EnvironmentListItem
+              key={env.id}
+              environment={env}
+              errors={validateEnvironment(env)}
+            />
+          ))}
         </div>
       </div>
     </div>

@@ -84,10 +84,19 @@ export const useConfigurationState = (config: ExtensionConfig) => {
       description: '',
       color: getRandomColor()
     };
-    setEditingProjects(prev => [...prev, newProject]);
+    setEditingProjects(prev => [newProject, ...prev]);
 
     // Mark as newly added for auto-expand
     setNewlyAddedProjects(prev => new Set(prev).add(newProject.id));
+
+    setTimeout(() => {
+      if (configurationPanel.current) {
+        configurationPanel.current.scrollTop = 0;
+        if (configurationPanel.current.parentElement) {
+          configurationPanel.current.parentElement.scrollTop = 0;
+        }
+      }
+    }, 50);
   };
 
   const removeProject = (indexOrId: number | string) => {
@@ -130,7 +139,7 @@ export const useConfigurationState = (config: ExtensionConfig) => {
         description: 'Default project for environments',
         color: getRandomColor()
       };
-      setEditingProjects(prev => [...prev, defaultProject]);
+      setEditingProjects(prev => [defaultProject, ...prev]);
       setNewlyAddedProjects(prev => new Set(prev).add(defaultProject.id));
       targetProjectId = defaultProject.id;
     }
@@ -142,17 +151,10 @@ export const useConfigurationState = (config: ExtensionConfig) => {
       color: getRandomColor(),
       projectId: targetProjectId!
     };
-    setEditingEnvironments(prev => [...prev, newEnv]);
+    setEditingEnvironments(prev => [newEnv, ...prev]);
 
     // Mark as newly added for auto-expand
     setNewlyAddedEnvironments(prev => new Set(prev).add(newEnv.id));
-
-    // scroll to the bottom to show the new environment
-    setTimeout(() => {
-      if (configurationPanel.current) {
-        configurationPanel.current.scrollTop = configurationPanel.current.scrollHeight;
-      }
-    }, 100);
   };
 
   const addCurrentDomain = async (projectId?: string) => {
@@ -202,17 +204,10 @@ export const useConfigurationState = (config: ExtensionConfig) => {
         projectId: targetProjectId!
       };
 
-      setEditingEnvironments([...editingEnvironments, newEnv]);
+      setEditingEnvironments(prev => [newEnv, ...prev]);
 
       // Mark as newly added for auto-expand
       setNewlyAddedEnvironments(prev => new Set(prev).add(newEnv.id));
-
-      // scroll to the bottom to show the new environment
-      setTimeout(() => {
-        if (configurationPanel.current) {
-          configurationPanel.current.scrollTop = configurationPanel.current.scrollHeight;
-        }
-      }, 100);
     } catch (error) {
       // Failed to add current domain - silently handle
       // Fallback to regular add environment if current domain detection fails
@@ -285,6 +280,7 @@ export const useConfigurationState = (config: ExtensionConfig) => {
     currentTabUrl,
     currentProjectId,
     currentEnvironment,
+    recentEnvironmentIds: config.recentEnvironmentIds || [],
     handleProjectChange,
     addProject,
     removeProject,

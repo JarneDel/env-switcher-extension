@@ -19,6 +19,18 @@ class Background {
         // Register the address bar (omnibox) keyword handler
         new Omnibox().init();
 
+        // Handle extension commands (configurable in browser settings)
+        browser.commands?.onCommand?.addListener(async (command) => {
+            if (command === 'quick_switch') {
+                try {
+                    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                    if (tabs.length > 0 && tabs[0].id) {
+                        await this.sendMessageSafely(tabs[0].id, { action: 'showShortcutPopup' });
+                    }
+                } catch (e) { /* Silently handle */ }
+            }
+        });
+
         // Handle tab activation
         browser.tabs.onActivated.addListener(async (activeInfo) => {
             await this.refreshFaviconForTab(activeInfo.tabId);

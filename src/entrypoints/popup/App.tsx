@@ -56,8 +56,10 @@ function App() {
         setHealthMap(changes[HEALTH_STORAGE_KEY]?.newValue ?? {});
       }
     };
-    browser.storage.onChanged.addListener(handleStorageChange);
-    return () => browser.storage.onChanged.removeListener(handleStorageChange);
+    if (browser.storage?.onChanged?.addListener) {
+      browser.storage.onChanged.addListener(handleStorageChange);
+      return () => browser.storage.onChanged.removeListener(handleStorageChange);
+    }
   }, []);
 
   // Reload data when navigating back to main view so auto-saved changes are reflected

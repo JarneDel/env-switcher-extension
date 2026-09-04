@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from '@/shared/router';
-import { Eye, FolderOpen, Share2 } from 'lucide-react';
+import { Eye, FolderOpen, Share2, Keyboard } from 'lucide-react';
 import { Button, TabStrip } from '@/shared/ui';
 import { ProjectSettingsPanel } from '@/modules/environments';
 import { DisplaySettingsPanel } from '@/modules/visual-indicators';
 import { DataSettingsPanel } from '@/modules/sync';
+import ShortcutsSettingsPanel from './ShortcutsSettingsPanel';
 
 interface SettingsViewProps {
   isConfigured: boolean;
@@ -50,7 +51,9 @@ export default function SettingsView({
     ? 'display'
     : location.pathname === '/settings/data'
       ? 'data'
-      : 'projects';
+      : location.pathname === '/settings/shortcuts'
+        ? 'shortcuts'
+        : 'projects';
 
   return (
     <>
@@ -76,6 +79,7 @@ export default function SettingsView({
           tabs={[
             { id: 'projects', label: 'Projects', icon: <FolderOpen size={14} /> },
             { id: 'display', label: 'Display', icon: <Eye size={14} /> },
+            { id: 'shortcuts', label: 'Shortcuts', icon: <Keyboard size={14} /> },
             { id: 'data', label: 'Share', icon: <Share2 size={14} /> },
           ]}
         />
@@ -84,6 +88,8 @@ export default function SettingsView({
           <DisplaySettingsPanel />
         ) : activeTab === 'data' ? (
           <DataSettingsPanel />
+        ) : activeTab === 'shortcuts' ? (
+          <ShortcutsSettingsPanel />
         ) : (
           <ProjectSettingsPanel />
         )}

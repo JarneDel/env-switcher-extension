@@ -24,6 +24,7 @@ interface ConfigurationContextType {
   currentTabUrl: string | undefined;
   currentProjectId?: string;
   currentEnvironment?: Environment;
+  recentEnvironmentIds: string[];
 }
 
 const ConfigurationContext = createContext<ConfigurationContextType | undefined>(undefined);

@@ -41,7 +41,11 @@ export default defineConfig({
         commands: {
             _execute_action: {
                 suggested_key: { default: 'Ctrl+E', mac: 'Command+E' },
-                description: 'Open Environment Switcher',
+                description: 'Open Environment Switcher popup',
+            },
+            quick_switch: {
+                suggested_key: { default: 'Alt+Shift+E', mac: 'Alt+Shift+E' },
+                description: 'Open in-page quick switcher',
             },
         },
     },
